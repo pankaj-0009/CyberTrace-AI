@@ -1,0 +1,3836 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Sonipat ATM Fraud Intelligence Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <style>
+      :root {
+        --bg: #0e1620;
+        --panel: #152130;
+        --panel-2: #1a2836;
+        --line: #26374a;
+        --text: #dce4ea;
+        --muted: #7e93a7;
+        --critical: #d8574a;
+        --high: #de9a48;
+        --medium: #d3bd5c;
+        --low: #4e9c81;
+        --accent: #4c8fbd;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.001ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.001ms !important;
+        }
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "IBM Plex Sans", sans-serif;
+        font-size: 14px;
+      }
+      .mono {
+        font-family: "IBM Plex Mono", monospace;
+      }
+      #app {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        grid-template-rows: auto 1fr;
+        height: 100vh;
+      }
+
+      /* ---------- keyframes ---------- */
+      @keyframes fadeSlideUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes slideInLeft {
+        from {
+          opacity: 0;
+          transform: translateX(-14px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      @keyframes scanline {
+        0% {
+          background-position: 0 0;
+        }
+        100% {
+          background-position: 0 -240px;
+        }
+      }
+      @keyframes pulseRing {
+        0% {
+          box-shadow: 0 0 0 0 rgba(216, 87, 74, 0.55);
+        }
+        70% {
+          box-shadow: 0 0 0 9px rgba(216, 87, 74, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(216, 87, 74, 0);
+        }
+      }
+      @keyframes pulseRingHigh {
+        0% {
+          box-shadow: 0 0 0 0 rgba(222, 154, 72, 0.45);
+        }
+        70% {
+          box-shadow: 0 0 0 7px rgba(222, 154, 72, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(222, 154, 72, 0);
+        }
+      }
+      @keyframes softGlowText {
+        0%,
+        100% {
+          text-shadow: 0 0 0 rgba(216, 87, 74, 0);
+        }
+        50% {
+          text-shadow: 0 0 14px rgba(216, 87, 74, 0.55);
+        }
+      }
+      @keyframes shimmer {
+        0% {
+          background-position: -300px 0;
+        }
+        100% {
+          background-position: 300px 0;
+        }
+      }
+      @keyframes radarSweep {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes dashFlow {
+        to {
+          stroke-dashoffset: -40;
+        }
+      }
+      @keyframes floatIn {
+        from {
+          opacity: 0;
+          transform: translateY(6px) scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      @keyframes markerPulse {
+        0% {
+          stroke-width: 1px;
+        }
+        50% {
+          stroke-width: 3px;
+        }
+        100% {
+          stroke-width: 1px;
+        }
+      }
+      @keyframes underlineGrow {
+        from {
+          width: 0;
+        }
+        to {
+          width: 100%;
+        }
+      }
+      @keyframes logoSpin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.25;
+        }
+      }
+      @keyframes countRise {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      header {
+        grid-column: 1/3;
+        background: linear-gradient(180deg, var(--panel), #131e2b);
+        border-bottom: 1px solid var(--line);
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        position: relative;
+        overflow: hidden;
+      }
+      header::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--accent),
+          var(--critical),
+          transparent
+        );
+        background-size: 200% 100%;
+        opacity: 0.6;
+        animation: shimmer 6s linear infinite;
+      }
+      .logo-mark {
+        width: 34px;
+        height: 34px;
+        flex-shrink: 0;
+        filter: drop-shadow(0 0 6px rgba(76, 143, 189, 0.5));
+      }
+      .logo-mark .sweep {
+        transform-origin: 17px 17px;
+        animation: logoSpin 5s linear infinite;
+      }
+      .title {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .title-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .title h1 {
+        font-size: 16px;
+        margin: 0;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+      }
+      .title span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .live-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--low);
+        display: inline-block;
+        margin-right: 6px;
+        animation: blink 2s ease-in-out infinite;
+      }
+      .disclaimer {
+        background: #2a211600;
+        border: 1px solid #6b4a2200;
+        color: #63e5a800;
+        font-size: 11.5px;
+        padding: 6px 12px;
+        border-radius: 3px;
+        max-width: 520px;
+        line-height: 1.4;
+        animation: fadeIn 0.8s ease both;
+      }
+      nav {
+        background: var(--panel);
+        border-right: 1px solid var(--line);
+        padding: 16px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      nav button {
+        background: none;
+        border: none;
+        color: var(--muted);
+        text-align: left;
+        padding: 10px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        font-family: inherit;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        position: relative;
+        transition:
+          background 0.25s ease,
+          color 0.25s ease,
+          transform 0.15s ease,
+          padding-left 0.25s ease;
+        animation: slideInLeft 0.45s ease both;
+      }
+      nav button:nth-child(2) {
+        animation-delay: 0.03s;
+      }
+      nav button:nth-child(3) {
+        animation-delay: 0.08s;
+      }
+      nav button:nth-child(4) {
+        animation-delay: 0.13s;
+      }
+      nav button:nth-child(5) {
+        animation-delay: 0.18s;
+      }
+      nav button:hover {
+        background: var(--panel-2);
+        color: var(--text);
+        padding-left: 16px;
+      }
+      nav button.active {
+        background: var(--panel-2);
+        color: var(--accent);
+        border-left: 2px solid var(--accent);
+      }
+      nav button:active {
+        transform: scale(0.97);
+      }
+      nav .grp {
+        color: #4a5a6b;
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin: 14px 12px 4px;
+      }
+      main {
+        overflow: auto;
+        padding: 20px 24px;
+      }
+      .view {
+        display: none;
+      }
+      .view.active {
+        display: block;
+        animation: fadeIn 0.35s ease both;
+      }
+      .row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 16px;
+        transition:
+          border-color 0.25s ease,
+          transform 0.25s ease,
+          box-shadow 0.25s ease;
+      }
+      .kpi {
+        min-width: 150px;
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        padding: 18px 20px 16px;
+        min-height: 130px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        animation: fadeSlideUp 0.5s ease both;
+      }
+      .kpi::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 3px;
+        background: var(--kpi-accent, var(--accent));
+        opacity: 0.8;
+      }
+      .kpi:nth-child(1) {
+        animation-delay: 0.02s;
+        --kpi-accent: var(--critical);
+      }
+      .kpi:nth-child(2) {
+        animation-delay: 0.08s;
+        --kpi-accent: var(--high);
+      }
+      .kpi:nth-child(3) {
+        animation-delay: 0.14s;
+        --kpi-accent: var(--accent);
+      }
+      .kpi:nth-child(4) {
+        animation-delay: 0.2s;
+        --kpi-accent: var(--medium);
+      }
+      .kpi:hover {
+        transform: translateY(-3px);
+        border-color: var(--kpi-accent, var(--accent));
+        box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.55);
+      }
+      .kpi .num {
+        font-size: clamp(2.3rem, 3vw, 4.25rem);
+        line-height: 0.9;
+        font-weight: 700;
+        letter-spacing: -0.06em;
+        font-family: "IBM Plex Sans", sans-serif;
+        display: inline-block;
+        color: var(--kpi-accent, var(--accent));
+        text-shadow: 0 0 18px rgba(255, 255, 255, 0.08);
+        animation: countRise 0.4s ease both;
+      }
+      .kpi .lbl {
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 10px;
+        line-height: 1.4;
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: "IBM Plex Mono", monospace;
+      }
+      .badge.CRITICAL {
+        background: rgba(216, 87, 74, 0.18);
+        color: var(--critical);
+        animation: pulseRing 2.2s ease-out infinite;
+      }
+      .badge.HIGH {
+        background: rgba(222, 154, 72, 0.18);
+        color: var(--high);
+      }
+      .badge.MEDIUM {
+        background: rgba(211, 189, 92, 0.18);
+        color: var(--medium);
+      }
+      .badge.LOW {
+        background: rgba(78, 156, 129, 0.18);
+        color: var(--low);
+      }
+      h2 {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+      h3 {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--muted);
+        margin: 0 0 10px;
+        text-transform: none;
+      }
+      .filters {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 14px 0;
+      }
+      select,
+      input[type="text"] {
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        color: var(--text);
+        padding: 6px 10px;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 12.5px;
+        transition:
+          border-color 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+      select:hover,
+      input[type="text"]:hover {
+        border-color: var(--accent);
+      }
+      select:focus,
+      input[type="text"]:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(76, 143, 189, 0.18);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12.5px;
+      }
+      th {
+        text-align: left;
+        color: var(--muted);
+        font-weight: 500;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--line);
+        position: sticky;
+        top: 0;
+        background: var(--panel);
+      }
+      td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #1d2a38;
+        transition: background 0.15s ease;
+      }
+      tr {
+        animation: fadeIn 0.4s ease both;
+      }
+      tr:hover td {
+        background: var(--panel-2);
+        cursor: pointer;
+      }
+      tr:hover {
+        transform: translateX(1px);
+      }
+      #map-wrap {
+        position: relative;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        height: 520px;
+        overflow: hidden;
+        animation: fadeSlideUp 0.5s ease both;
+      }
+      #atm-detail {
+        width: 320px;
+        animation: fadeSlideUp 0.5s 0.1s ease both;
+      }
+      .radar-sweep {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 1px solid rgba(76, 143, 189, 0.35);
+        z-index: 999;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .radar-sweep::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: conic-gradient(
+          from 0deg,
+          rgba(76, 143, 189, 0.65),
+          transparent 35%
+        );
+        animation: radarSweep 3s linear infinite;
+      }
+      .radar-sweep::after {
+        content: "";
+        position: absolute;
+        inset: 7px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 8px 2px rgba(76, 143, 189, 0.7);
+      }
+      #leaflet-map {
+        width: 100%;
+        height: 100%;
+        background: #0b1119;
+      }
+      .leaflet-popup-content-wrapper {
+        background: var(--panel);
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+      }
+      .leaflet-popup-tip {
+        background: var(--panel);
+      }
+      .leaflet-popup-content {
+        font-family: "IBM Plex Sans", sans-serif;
+        font-size: 12.5px;
+        line-height: 1.5;
+        margin: 10px 12px;
+      }
+      .leaflet-popup-content b {
+        font-family: "IBM Plex Mono", monospace;
+      }
+      .leaflet-container a.leaflet-popup-close-button {
+        color: var(--muted);
+      }
+      .leaflet-control-zoom a {
+        background: var(--panel) !important;
+        color: var(--text) !important;
+        border-color: var(--line) !important;
+      }
+      .leaflet-control-attribution {
+        background: rgba(14, 22, 32, 0.75) !important;
+        color: var(--muted) !important;
+        font-size: 9.5px !important;
+      }
+      .leaflet-control-attribution a {
+        color: var(--muted) !important;
+      }
+      .legend {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        z-index: 1000;
+        background: rgba(14, 22, 32, 0.9);
+        padding: 8px 10px;
+        border-radius: 4px;
+        font-size: 11px;
+        display: flex;
+        gap: 12px;
+        backdrop-filter: blur(3px);
+        animation: fadeIn 0.6s 0.3s ease both;
+      }
+      .legend span {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .legend i {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+      .legend span:first-child i {
+        animation: pulseRing 2.2s ease-out infinite;
+      }
+      .alert-item {
+        display: flex;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid #1d2a38;
+        align-items: flex-start;
+        border-left: 2px solid transparent;
+        padding-left: 8px;
+        margin-left: -8px;
+        transition:
+          border-color 0.3s ease,
+          background 0.3s ease;
+      }
+      .alert-item:hover {
+        background: rgba(76, 143, 189, 0.06);
+        border-left-color: var(--accent);
+      }
+      .alert-item.is-new {
+        border-left-color: var(--critical);
+      }
+      .chan {
+        width: 26px;
+        height: 26px;
+        border-radius: 4px;
+        background: var(--panel-2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        flex-shrink: 0;
+        color: var(--accent);
+        transition: transform 0.3s ease;
+      }
+      .alert-item:hover .chan {
+        transform: scale(1.12) rotate(-4deg);
+      }
+      .case-row {
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+        background: var(--panel-2);
+        transition:
+          border-color 0.25s ease,
+          transform 0.2s ease,
+          box-shadow 0.25s ease;
+        animation: fadeSlideUp 0.45s ease both;
+      }
+      .case-row:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px -14px rgba(0, 0, 0, 0.6);
+      }
+      .case-row .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      textarea {
+        width: 100%;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        color: var(--text);
+        border-radius: 4px;
+        padding: 8px;
+        font-family: inherit;
+        font-size: 12.5px;
+        resize: vertical;
+        min-height: 44px;
+        transition:
+          border-color 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+      textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(76, 143, 189, 0.15);
+      }
+      button.btn {
+        background: var(--accent);
+        border: none;
+        color: #08141f;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        position: relative;
+        overflow: hidden;
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.25s ease,
+          filter 0.2s ease;
+      }
+      button.btn:hover {
+        filter: brightness(1.08);
+        box-shadow: 0 4px 14px -4px rgba(76, 143, 189, 0.6);
+      }
+      button.btn:active {
+        transform: scale(0.95);
+      }
+      button.btn.ghost {
+        background: none;
+        border: 1px solid var(--line);
+        color: var(--text);
+      }
+      button.btn.ghost:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      button.btn:disabled {
+        filter: grayscale(0.4);
+        cursor: default;
+      }
+      .ripple {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.45);
+        transform: scale(0);
+        animation: rippleAnim 0.55s ease-out;
+        pointer-events: none;
+      }
+      @keyframes rippleAnim {
+        to {
+          transform: scale(3);
+          opacity: 0;
+        }
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 16px;
+      }
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #2a3b4c;
+        border-radius: 4px;
+        transition: background 0.2s ease;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--accent);
+      }
+
+      /* ---------- drill-down detail polish ---------- */
+      #detail-body {
+        animation: floatIn 0.4s ease both;
+      }
+      .detail-title {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 2px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .detail-title .pulse-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        animation: blink 1.6s ease-in-out infinite;
+      }
+      .coord-box {
+        margin-top: 12px;
+        padding: 10px 12px;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        transition: border-color 0.2s ease;
+      }
+      .coord-box:hover {
+        border-color: var(--accent);
+      }
+      .coord-box .coord-vals {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 12.5px;
+        line-height: 1.5;
+      }
+      .coord-box .coord-vals .lbl {
+        color: var(--muted);
+        font-size: 10px;
+        text-transform: none;
+        display: block;
+      }
+      .coord-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .icon-btn {
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        color: var(--muted);
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 10.5px;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+      }
+      .icon-btn:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+      .icon-btn.copied {
+        color: var(--low);
+        border-color: var(--low);
+      }
+      .detail-table {
+        animation: fadeSlideUp 0.4s 0.05s ease both;
+      }
+      .detail-table tr td {
+        transition: background 0.15s ease;
+      }
+      .score-bar-track {
+        height: 5px;
+        background: var(--panel-2);
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 6px;
+      }
+      .score-bar-fill {
+        height: 100%;
+        border-radius: 3px;
+        width: 0;
+        transition: width 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+
+      /* ===== Predictive Engine redesign ===== */
+      .engine-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 18px;
+        margin-bottom: 18px;
+      }
+      .engine-kicker {
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        color: #58b8e8;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      .engine-title {
+        font-size: 28px;
+        line-height: 1.1;
+        margin: 4px 0 7px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+      }
+      .engine-sub {
+        color: var(--muted);
+        font-size: 13px;
+        max-width: 780px;
+        line-height: 1.55;
+      }
+      .engine-active {
+        border: 1px solid #9c6f48;
+        color: #e5a55c;
+        border-radius: 999px;
+        padding: 6px 12px;
+        font:
+          600 10px "IBM Plex Mono",
+          monospace;
+        white-space: nowrap;
+        background: rgba(222, 154, 72, 0.05);
+      }
+      .engine-top {
+        display: grid;
+        grid-template-columns: minmax(0, 1.75fr) minmax(300px, 0.95fr);
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+      .engine-hero,
+      .risk-dist {
+        min-height: 220px;
+        background: linear-gradient(135deg, #111d2b, #0d1724);
+        border: 1px solid #203246;
+        border-radius: 22px;
+        padding: 24px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.14);
+      }
+      .engine-hero:after {
+        content: "";
+        position: absolute;
+        width: 190px;
+        height: 190px;
+        right: -20px;
+        top: -90px;
+        border-radius: 50%;
+        border: 1px solid rgba(76, 143, 189, 0.18);
+        box-shadow:
+          0 0 0 24px rgba(76, 143, 189, 0.025),
+          0 0 0 48px rgba(76, 143, 189, 0.02);
+        pointer-events: none;
+      }
+      .engine-label {
+        color: #8295aa;
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+      .engine-hero h2 {
+        font-size: 25px;
+        margin: 10px 0 8px;
+        color: #eef4f8;
+        letter-spacing: -0.02em;
+      }
+      .engine-hero p {
+        color: #8193a7;
+        line-height: 1.55;
+        max-width: 800px;
+        margin: 0;
+        font-size: 13px;
+      }
+      .engine-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-top: 20px;
+      }
+      .engine-stat {
+        background: rgba(20, 32, 47, 0.82);
+        border: 1px solid #24364a;
+        border-radius: 12px;
+        padding: 12px 14px;
+      }
+      .engine-stat strong {
+        display: block;
+        font:
+          700 17px "IBM Plex Mono",
+          monospace;
+        color: #e7eef4;
+      }
+      .engine-stat span {
+        display: block;
+        color: #75899d;
+        font-size: 10.5px;
+        margin-top: 3px;
+      }
+      .risk-dist h3 {
+        color: #8c9caf;
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin: 0 0 18px;
+      }
+      .risk-row {
+        margin: 0 0 17px;
+      }
+      .risk-row-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .risk-track {
+        height: 7px;
+        background: #0a1320;
+        border-radius: 99px;
+        overflow: hidden;
+      }
+      .risk-fill {
+        height: 100%;
+        width: 0;
+        border-radius: 99px;
+        transition: width 0.65s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .engine-toolbar {
+        display: flex;
+        gap: 9px;
+        align-items: center;
+        flex-wrap: wrap;
+        background: #101b29;
+        border: 1px solid #203246;
+        border-radius: 14px;
+        padding: 10px;
+        margin-bottom: 12px;
+      }
+      .engine-search {
+        flex: 1;
+        min-width: 220px;
+        background: #0c1622 !important;
+        border: 1px solid #26394d !important;
+        border-radius: 8px !important;
+        padding: 9px 12px !important;
+      }
+      .engine-toolbar select {
+        border-radius: 8px;
+        padding: 9px 11px;
+      }
+      .engine-count {
+        margin-left: auto;
+        color: #71869b;
+        font:
+          11px "IBM Plex Mono",
+          monospace;
+      }
+      .engine-table-wrap {
+        background: #0f1a28;
+        border: 1px solid #203246;
+        border-radius: 16px;
+        overflow: auto;
+        max-height: calc(100vh - 500px);
+        min-height: 300px;
+      }
+      .engine-table {
+        min-width: 1050px;
+      }
+      .engine-table th {
+        background: #0d1724;
+        padding: 13px 14px;
+        font-size: 10px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .engine-table td {
+        padding: 13px 14px;
+        border-bottom: 1px solid #1b2a3a;
+      }
+      .engine-table tbody tr {
+        transition:
+          background 0.2s,
+          transform 0.15s;
+      }
+      .engine-table tbody tr:hover td {
+        background: #142234;
+      }
+      .engine-table .id {
+        font:
+          600 11px "IBM Plex Mono",
+          monospace;
+        color: #dbe6ee;
+      }
+      .score-cell {
+        min-width: 120px;
+      }
+      .score-num {
+        font:
+          600 12px "IBM Plex Mono",
+          monospace;
+      }
+      .mini-track {
+        height: 4px;
+        background: #09121d;
+        border-radius: 99px;
+        margin-top: 5px;
+      }
+      .mini-fill {
+        height: 100%;
+        border-radius: 99px;
+      }
+      .engine-badge {
+        padding: 5px 9px;
+        border-radius: 999px;
+        font:
+          600 9.5px "IBM Plex Mono",
+          monospace;
+        letter-spacing: 0.02em;
+        border: 1px solid currentColor;
+        white-space: nowrap;
+      }
+      .engine-empty {
+        text-align: center !important;
+        padding: 40px !important;
+        color: #71869b !important;
+      }
+      @media (max-width: 900px) {
+        .engine-top {
+          grid-template-columns: 1fr;
+        }
+        .engine-head {
+          flex-direction: column;
+        }
+        .engine-stats {
+          grid-template-columns: 1fr;
+        }
+        .engine-table-wrap {
+          max-height: none;
+        }
+        .engine-count {
+          margin-left: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <div class="title-row">
+          <svg
+            class="logo-mark"
+            viewBox="0 0 34 34"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle
+              cx="17"
+              cy="17"
+              r="15.5"
+              stroke="#26374A"
+              stroke-width="1.5"
+            />
+            <circle
+              cx="17"
+              cy="17"
+              r="10.5"
+              stroke="#26374A"
+              stroke-width="1"
+            />
+            <g class="sweep">
+              <path
+                d="M17 17 L17 3.5 A13.5 13.5 0 0 1 28.7 10.5 Z"
+                fill="url(#sweepGrad)"
+              />
+            </g>
+            <circle cx="17" cy="17" r="2.4" fill="#D8574A" />
+            <circle cx="9" cy="12" r="1.3" fill="#4C8FBD" />
+            <circle cx="23" cy="21" r="1.3" fill="#4C8FBD" />
+            <defs>
+              <linearGradient
+                id="sweepGrad"
+                x1="17"
+                y1="3.5"
+                x2="28.7"
+                y2="10.5"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop stop-color="#4C8FBD" stop-opacity="0.85" />
+                <stop offset="1" stop-color="#4C8FBD" stop-opacity="0" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="title">
+            <h1>
+              <span class="live-dot"></span>CyberTrace AI
+            </h1>
+            <span
+              >Predictive analytics · GIS risk mapping · investigator workspace
+              · alerting</span
+            >
+          </div>
+        </div>
+        <div class="title" style="align-items:flex-end;">
+          <div class="disclaimer"></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+            <div id="live-status" class="mono muted" style="font-size:11px;">● static demo data — start live_data_simulator.py + serve this folder over HTTP, then click Refresh</div>
+            <button class="btn ghost" id="refresh-btn" type="button" style="padding:3px 10px;font-size:11px;">⟳ Refresh</button>
+          </div>
+        </div>
+      </header>
+      <nav>
+        <div class="grp">Modules</div>
+        <button data-view="heatmap" class="active">◈ Risk Heatmap</button>
+        <button data-view="engine">▤ Predictive Engine</button>
+        <button data-view="le">▣ Investigator Workspace</button>
+        <button data-view="alerts">◉ Alerts & Notify</button>
+      </nav>
+      <main>
+        <!-- HEATMAP VIEW -->
+        <section id="view-heatmap" class="view active">
+          <div class="row" style="margin-bottom: 14px">
+            <div class="card kpi">
+              <div class="num" id="kpi-critical">-</div>
+              <div class="lbl">Critical-risk ATMs</div>
+            </div>
+            <div class="card kpi">
+              <div class="num" id="kpi-high">-</div>
+              <div class="lbl">High-risk ATMs</div>
+            </div>
+            <div class="card kpi">
+              <div class="num" id="kpi-complaints">-</div>
+              <div class="lbl">Linked complaints (90d window)</div>
+            </div>
+            <div class="card kpi">
+              <div class="num" id="kpi-anomaly">-</div>
+              <div class="lbl">Anomalous pattern flags</div>
+            </div>
+          </div>
+          <div class="filters">
+            <select id="f-area">
+              <option value="">All areas</option>
+            </select>
+            <select id="f-bank">
+              <option value="">All banks</option>
+            </select>
+            <select id="f-fraud">
+              <option value="">All fraud types</option>
+            </select>
+            <select id="f-risk">
+              <option value="">All risk levels</option>
+              <option>CRITICAL RISK</option>
+              <option>HIGH RISK</option>
+              <option>MEDIUM RISK</option>
+              <option>LOW RISK</option>
+            </select>
+            <button
+              class="btn ghost"
+              id="map-mode-toggle"
+              style="margin-left: auto"
+            >
+              Switch to offline map
+            </button>
+          </div>
+          <div class="grid2">
+            <div id="map-wrap">
+              <div class="radar-sweep" title="Live monitoring"></div>
+              <div id="leaflet-map"></div>
+              <svg
+                id="offline-map-svg"
+                viewBox="0 0 800 520"
+                style="width: 100%; height: 100%; display: none"
+              ></svg>
+              <div
+                id="map-mode-note"
+                style="
+                  position: absolute;
+                  top: 10px;
+                  right: 10px;
+                  z-index: 1000;
+                  background: rgba(14, 22, 32, 0.9);
+                  padding: 5px 10px;
+                  border-radius: 4px;
+                  font-size: 11px;
+                  color: var(--muted);
+                  display: none;
+                "
+              ></div>
+              <div class="legend">
+                <span><i style="background: #d8574a"></i>Critical</span>
+                <span><i style="background: #de9a48"></i>High</span>
+                <span><i style="background: #d3bd5c"></i>Medium</span>
+                <span><i style="background: #4e9c81"></i>Low</span>
+              </div>
+            </div>
+            <div class="card" id="atm-detail">
+              <h3>Drill-down</h3>
+              <div id="detail-body" class="muted">
+                Click a marker to inspect an ATM's risk profile, cluster, and
+                linked complaint pattern.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- PREDICTIVE ENGINE VIEW -->
+        <section id="view-engine" class="view">
+          <div class="engine-head">
+            <div>
+              <div class="engine-kicker">Model intelligence</div>
+              <div class="engine-title">Predictive Engine</div>
+              <div class="engine-sub">
+                Ranked decision-support output generated from the existing model
+                fields.
+              </div>
+            </div>
+            <div class="engine-active">MODEL ACTIVE</div>
+          </div>
+
+          <div class="engine-top">
+            <div class="engine-hero">
+              <div class="engine-label">Risk scoring pipeline</div>
+              <h2>Composite ATM Risk Score</h2>
+              <p>
+                Gradient Boosting severity signal + Isolation Forest anomaly
+                flag + DBSCAN geospatial density. Complaint-to-ATM linkage is
+                synthetic in this build and should be treated as directional.
+              </p>
+              <div class="engine-stats">
+                <div class="engine-stat">
+                  <strong>0–100</strong><span>Risk score range</span>
+                </div>
+                <div class="engine-stat">
+                  <strong>3-layer</strong><span>Signal fusion</span>
+                </div>
+                <div class="engine-stat">
+                  <strong id="engine-validation-count">52 ATM</strong
+                  ><span>Validation sample noted</span>
+                </div>
+              </div>
+            </div>
+            <div class="risk-dist">
+              <h3>Risk distribution</h3>
+              <div class="risk-row">
+                <div class="risk-row-head">
+                  <span>CRITICAL RISK</span><span id="rd-critical">0</span>
+                </div>
+                <div class="risk-track">
+                  <div
+                    id="rf-critical"
+                    class="risk-fill"
+                    style="background: var(--critical)"
+                  ></div>
+                </div>
+              </div>
+              <div class="risk-row">
+                <div class="risk-row-head">
+                  <span>HIGH RISK</span><span id="rd-high">0</span>
+                </div>
+                <div class="risk-track">
+                  <div
+                    id="rf-high"
+                    class="risk-fill"
+                    style="background: var(--high)"
+                  ></div>
+                </div>
+              </div>
+              <div class="risk-row">
+                <div class="risk-row-head">
+                  <span>MEDIUM RISK</span><span id="rd-medium">0</span>
+                </div>
+                <div class="risk-track">
+                  <div
+                    id="rf-medium"
+                    class="risk-fill"
+                    style="background: var(--medium)"
+                  ></div>
+                </div>
+              </div>
+              <div class="risk-row" style="margin-bottom: 0">
+                <div class="risk-row-head">
+                  <span>LOW RISK</span><span id="rd-low">0</span>
+                </div>
+                <div class="risk-track">
+                  <div
+                    id="rf-low"
+                    class="risk-fill"
+                    style="background: var(--low)"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="engine-toolbar">
+            <input
+              id="engine-search"
+              class="engine-search"
+              type="text"
+              placeholder="Search ATM ID, bank, area or fraud type…"
+              autocomplete="off"
+            />
+            <select id="engine-risk-filter">
+              <option value="">All risk levels</option>
+              <option>CRITICAL RISK</option>
+              <option>HIGH RISK</option>
+              <option>MEDIUM RISK</option>
+              <option>LOW RISK</option>
+            </select>
+            <select id="engine-sort">
+              <option value="score-desc">Score: high → low</option>
+              <option value="score-asc">Score: low → high</option>
+              <option value="complaints-desc">Complaints: high → low</option>
+              <option value="recovery-desc">Recovery: high → low</option>
+              <option value="atm-asc">ATM ID: A → Z</option>
+            </select>
+            <button class="btn ghost" id="engine-reset">Reset</button>
+            <button class="btn" id="engine-export">Export CSV</button>
+            <span class="engine-count" id="engine-count">0 results</span>
+          </div>
+
+          <div class="engine-table-wrap">
+            <table class="engine-table">
+              <thead>
+                <tr>
+                  <th>ATM ID</th>
+                  <th>Bank</th>
+                  <th>Area</th>
+                  <th>Complaints</th>
+                  <th>Top fraud type</th>
+                  <th>Recovery</th>
+                  <th>Anomaly</th>
+                  <th>Score</th>
+                  <th>Category</th>
+                </tr>
+              </thead>
+              <tbody id="engine-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- LAW ENFORCEMENT VIEW -->
+        <section id="view-le" class="view">
+          <div
+            class="card"
+            style="
+              margin-bottom: 14px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <div>
+              <h3
+                style="color: var(--text); font-size: 13px; margin-bottom: 2px"
+              >
+                Investigator session
+              </h3>
+              <div class="muted">
+                Signed in as Sub-Inspector, Sonipat Cyber Cell · role:
+                investigator · read/annotate access
+              </div>
+            </div>
+            <button class="btn ghost">Export intelligence report</button>
+          </div>
+          <div id="case-list"></div>
+        </section>
+
+        <!-- ALERTS VIEW -->
+        <section id="view-alerts" class="view">
+          <div class="row" style="margin-bottom: 14px">
+            <div class="card" style="flex: 2; min-width: 320px">
+              <h3 style="color: var(--text); font-size: 13px">
+                Live alert feed
+              </h3>
+              <div
+                id="alert-feed"
+                style="max-height: 460px; overflow: auto"
+              ></div>
+            </div>
+            <div class="card" style="flex: 1; min-width: 260px">
+              <h3 style="color: var(--text); font-size: 13px">
+                Notification routing
+              </h3>
+              <div class="muted" style="margin-bottom: 10px">
+                Simulated dispatch — wire to a real SMS/email/API gateway for
+                production use.
+              </div>
+              <div
+                id="notify-log"
+                class="mono"
+                style="
+                  font-size: 11.5px;
+                  line-height: 1.8;
+                  max-height: 340px;
+                  overflow: auto;
+                "
+              ></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      window.__ATM_DATA__ = [
+        {
+          ATM_ID: "SNP-ATM-1012",
+          bank_name: "Hdfc Bank",
+          area: "Sonipat City",
+          latitude: 28.994694,
+          longitude: 77.020694,
+          address:
+            "No 21, Building Geeta Bhavan, Geeta Bhavan Chowk, nearby Gurudwar, Kalyan Nagar, Sonipat, Haryana 131001",
+          Complaint_Count: 36,
+          Recent_30d_Count: 36,
+          Top_Fraud_Type: "Phishing",
+          Avg_Fund_Recovery_Pct: 44.4444444444,
+          Pct_Blocked: 0.3611111111,
+          Pct_Under_Investigation: 0.6111111111,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 85.02,
+          Risk_Category: "CRITICAL RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1011",
+          bank_name: "Hdfc Bank",
+          area: "Sonipat City",
+          latitude: 29.002944,
+          longitude: 76.992306,
+          address: "Sector 21, Sonipat, Haryana 131001",
+          Complaint_Count: 40,
+          Recent_30d_Count: 40,
+          Top_Fraud_Type: "OTP Bypass",
+          Avg_Fund_Recovery_Pct: 46.875,
+          Pct_Blocked: 0.5,
+          Pct_Under_Investigation: 0.475,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 84.89,
+          Risk_Category: "CRITICAL RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1018",
+          bank_name: "Union Bank",
+          area: "Sonipat City",
+          latitude: 28.996063,
+          longitude: 77.028562,
+          address: "Sector 14 ",
+          Complaint_Count: 32,
+          Recent_30d_Count: 32,
+          Top_Fraud_Type: "Phishing",
+          Avg_Fund_Recovery_Pct: 45.3125,
+          Pct_Blocked: 0.21875,
+          Pct_Under_Investigation: 0.5625,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 83.62,
+          Risk_Category: "CRITICAL RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1024",
+          bank_name: "Punjab National Bank",
+          area: "Sonipat City",
+          latitude: 28.993709,
+          longitude: 77.04645,
+          address: "Gateway Education",
+          Complaint_Count: 30,
+          Recent_30d_Count: 30,
+          Top_Fraud_Type: "SIM Swap",
+          Avg_Fund_Recovery_Pct: 41.6666666667,
+          Pct_Blocked: 0.4333333333,
+          Pct_Under_Investigation: 0.5666666667,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 81.84,
+          Risk_Category: "CRITICAL RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1029",
+          bank_name: "Hdfc Bank",
+          area: "Sonipat City",
+          latitude: 28.988813,
+          longitude: 77.020562,
+          address: "No 203, 1st Floor, Model Town, Sonipat, Haryana 131001",
+          Complaint_Count: 33,
+          Recent_30d_Count: 33,
+          Top_Fraud_Type: "UPI Fraud",
+          Avg_Fund_Recovery_Pct: 50.0,
+          Pct_Blocked: 0.3333333333,
+          Pct_Under_Investigation: 0.5151515152,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 78.51,
+          Risk_Category: "CRITICAL RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1013",
+          bank_name: "Hdfc Bank",
+          area: "Sonipat City",
+          latitude: 28.997207,
+          longitude: 77.032692,
+          address: "Sector 14 ",
+          Complaint_Count: 32,
+          Recent_30d_Count: 32,
+          Top_Fraud_Type: "Phishing",
+          Avg_Fund_Recovery_Pct: 56.25,
+          Pct_Blocked: 0.40625,
+          Pct_Under_Investigation: 0.5625,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 76.44,
+          Risk_Category: "CRITICAL RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1039",
+          bank_name: "Icici Bank",
+          area: "Sonipat City",
+          latitude: 28.986799,
+          longitude: 77.020896,
+          address: "210-R, Atlas Rd, Model Town, Sonipat, Haryana 131001",
+          Complaint_Count: 27,
+          Recent_30d_Count: 27,
+          Top_Fraud_Type: "Fake Loan App",
+          Avg_Fund_Recovery_Pct: 47.2222222222,
+          Pct_Blocked: 0.3703703704,
+          Pct_Under_Investigation: 0.3703703704,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 74.44,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1048",
+          bank_name: "Yes Bank",
+          area: "Sonipat City",
+          latitude: 28.987563,
+          longitude: 77.020437,
+          address:
+            "Ground Floor, Minerva Theater Complex, Indira Colony, Sonipat, Haryana 131001",
+          Complaint_Count: 23,
+          Recent_30d_Count: 23,
+          Top_Fraud_Type: "Phishing",
+          Avg_Fund_Recovery_Pct: 46.7391304348,
+          Pct_Blocked: 0.3043478261,
+          Pct_Under_Investigation: 0.5652173913,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 71.8,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1047",
+          bank_name: "Central Bank Of India",
+          area: "Sonipat City",
+          latitude: 28.9818707,
+          longitude: 77.0138919,
+          address:
+            "Rohtak Rd, opposite Mahila Police Station, Sonipat, Haryana 131001",
+          Complaint_Count: 32,
+          Recent_30d_Count: 32,
+          Top_Fraud_Type: "SIM Swap",
+          Avg_Fund_Recovery_Pct: 53.125,
+          Pct_Blocked: 0.34375,
+          Pct_Under_Investigation: 0.40625,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 71.06,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1049",
+          bank_name: "Axis Bank",
+          area: "Sonipat City",
+          latitude: 28.987563,
+          longitude: 77.020437,
+          address:
+            "Ground Floor, Minerva Theater Complex, Indira Colony, Sonipat, Haryana 131001",
+          Complaint_Count: 28,
+          Recent_30d_Count: 28,
+          Top_Fraud_Type: "Fake Loan App",
+          Avg_Fund_Recovery_Pct: 50.0,
+          Pct_Blocked: 0.3214285714,
+          Pct_Under_Investigation: 0.5714285714,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 70.62,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1045",
+          bank_name: "Federal Bank",
+          area: "Sonipat City",
+          latitude: 28.9882254,
+          longitude: 77.0206976,
+          address:
+            "No 205\/R, Atlas Rd, near Puma Store, Model Town, Sonipat, Haryana 131001",
+          Complaint_Count: 31,
+          Recent_30d_Count: 31,
+          Top_Fraud_Type: "UPI Fraud",
+          Avg_Fund_Recovery_Pct: 43.5483870968,
+          Pct_Blocked: 0.3225806452,
+          Pct_Under_Investigation: 0.5161290323,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 69.96,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1028",
+          bank_name: "Capital Small Finance Bank",
+          area: "Sonipat City",
+          latitude: 28.999563,
+          longitude: 77.040188,
+          address: "sec 15 main market",
+          Complaint_Count: 24,
+          Recent_30d_Count: 24,
+          Top_Fraud_Type: "Card Skimming",
+          Avg_Fund_Recovery_Pct: 52.0833333333,
+          Pct_Blocked: 0.375,
+          Pct_Under_Investigation: 0.4166666667,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 69.64,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1019",
+          bank_name: "Bank Of Baroda",
+          area: "Sonipat City",
+          latitude: 28.996187,
+          longitude: 77.028188,
+          address: "Sector 14 ",
+          Complaint_Count: 29,
+          Recent_30d_Count: 29,
+          Top_Fraud_Type: "SIM Swap",
+          Avg_Fund_Recovery_Pct: 55.1724137931,
+          Pct_Blocked: 0.4137931034,
+          Pct_Under_Investigation: 0.6206896552,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 69.25,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1052",
+          bank_name: "Central Bank Of India",
+          area: "Sonipat City",
+          latitude: 28.9820339,
+          longitude: 77.014223,
+          address:
+            "Plot No 4\/19, Gandhi Nagar, Kath Mandi, Aggarsain Nagar, Sonipat, Haryana 131001",
+          Complaint_Count: 27,
+          Recent_30d_Count: 27,
+          Top_Fraud_Type: "Card Skimming",
+          Avg_Fund_Recovery_Pct: 46.2962962963,
+          Pct_Blocked: 0.2962962963,
+          Pct_Under_Investigation: 0.4444444444,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 67.77,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1009",
+          bank_name: "Axis Bank",
+          area: "Sonipat City",
+          latitude: 29.002944,
+          longitude: 76.992306,
+          address:
+            "Sujan Singh Park, 82\/B, Old DC Rd, Jeewan Nagar, Model Town, Sonipat, Haryana 131001",
+          Complaint_Count: 25,
+          Recent_30d_Count: 25,
+          Top_Fraud_Type: "UPI Fraud",
+          Avg_Fund_Recovery_Pct: 57.0,
+          Pct_Blocked: 0.36,
+          Pct_Under_Investigation: 0.56,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 67.04,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1030",
+          bank_name: "Hdfc Bank",
+          area: "Sonipat City",
+          latitude: 28.9888666,
+          longitude: 77.0205938,
+          address:
+            "L 203, First Floor, near Subhash Chowk, Model Town, Sonipat, Haryana 131001",
+          Complaint_Count: 27,
+          Recent_30d_Count: 27,
+          Top_Fraud_Type: "OTP Bypass",
+          Avg_Fund_Recovery_Pct: 61.1111111111,
+          Pct_Blocked: 0.2962962963,
+          Pct_Under_Investigation: 0.4444444444,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 66.39,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1021",
+          bank_name: "Punjab National Bank",
+          area: "Sonipat City",
+          latitude: 28.996563,
+          longitude: 77.026313,
+          address: "Bus stand sonipat ",
+          Complaint_Count: 28,
+          Recent_30d_Count: 28,
+          Top_Fraud_Type: "Phishing",
+          Avg_Fund_Recovery_Pct: 55.3571428571,
+          Pct_Blocked: 0.2857142857,
+          Pct_Under_Investigation: 0.8214285714,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 66.35,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1026",
+          bank_name: "State Bank Of India",
+          area: "Sonipat City",
+          latitude: 28.999563,
+          longitude: 77.040188,
+          address: "sec 15 main market",
+          Complaint_Count: 27,
+          Recent_30d_Count: 27,
+          Top_Fraud_Type: "Phishing",
+          Avg_Fund_Recovery_Pct: 56.4814814815,
+          Pct_Blocked: 0.5185185185,
+          Pct_Under_Investigation: 0.6296296296,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 66.12,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1015",
+          bank_name: "State Bank Of India",
+          area: "Sonipat City",
+          latitude: 28.9807655,
+          longitude: 77.0474748,
+          address:
+            "Raj Filling Station, Delhi Rd, Sector 2, Sonipat, Haryana 131001",
+          Complaint_Count: 19,
+          Recent_30d_Count: 19,
+          Top_Fraud_Type: "Phishing",
+          Avg_Fund_Recovery_Pct: 36.8421052632,
+          Pct_Blocked: 0.2631578947,
+          Pct_Under_Investigation: 0.4736842105,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 66.02,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1025",
+          bank_name: "Hdfc Bank",
+          area: "Sonipat City",
+          latitude: 28.999563,
+          longitude: 77.040188,
+          address: "sec 15 main market",
+          Complaint_Count: 27,
+          Recent_30d_Count: 27,
+          Top_Fraud_Type: "Card Skimming",
+          Avg_Fund_Recovery_Pct: 53.7037037037,
+          Pct_Blocked: 0.2962962963,
+          Pct_Under_Investigation: 0.4444444444,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 65.22,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1050",
+          bank_name: "Kotak Mahindra",
+          area: "Sonipat City",
+          latitude: 28.987437,
+          longitude: 77.020813,
+          address:
+            "Ground Floor, Minerva Theater Complex, Indira Colony, Sonipat, Haryana 131001",
+          Complaint_Count: 27,
+          Recent_30d_Count: 27,
+          Top_Fraud_Type: "Card Skimming",
+          Avg_Fund_Recovery_Pct: 53.7037037037,
+          Pct_Blocked: 0.3703703704,
+          Pct_Under_Investigation: 0.4814814815,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 64.51,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1016",
+          bank_name: "Punjab National Bank",
+          area: "Sonipat City",
+          latitude: 29.004425,
+          longitude: 77.030978,
+          address: "Kothi No 194, Sector 14, Sonipat, Haryana 131001",
+          Complaint_Count: 29,
+          Recent_30d_Count: 29,
+          Top_Fraud_Type: "Fake Loan App",
+          Avg_Fund_Recovery_Pct: 53.4482758621,
+          Pct_Blocked: 0.4137931034,
+          Pct_Under_Investigation: 0.5172413793,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 64.09,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1031",
+          bank_name: "Uco Bank",
+          area: "Sonipat City",
+          latitude: 28.996681,
+          longitude: 77.026535,
+          address:
+            "Bawa Tarana Rd, opposite City Mall, Khanna Colony, Sonipat, Haryana 131001",
+          Complaint_Count: 25,
+          Recent_30d_Count: 25,
+          Top_Fraud_Type: "SIM Swap",
+          Avg_Fund_Recovery_Pct: 58.0,
+          Pct_Blocked: 0.28,
+          Pct_Under_Investigation: 0.52,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 63.69,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1023",
+          bank_name: "Hdfc Bank",
+          area: "Sonipat City",
+          latitude: 29.000437,
+          longitude: 77.040188,
+          address: "Sec 15 main market",
+          Complaint_Count: 25,
+          Recent_30d_Count: 25,
+          Top_Fraud_Type: "Card Skimming",
+          Avg_Fund_Recovery_Pct: 48.0,
+          Pct_Blocked: 0.32,
+          Pct_Under_Investigation: 0.52,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 62.43,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1001",
+          bank_name: "Canara Bank",
+          area: "Sonipat City",
+          latitude: 28.986689,
+          longitude: 77.0208969,
+          address: "Model Town, Sonipat, Haryana 131001",
+          Complaint_Count: 27,
+          Recent_30d_Count: 27,
+          Top_Fraud_Type: "UPI Fraud",
+          Avg_Fund_Recovery_Pct: 61.1111111111,
+          Pct_Blocked: 0.2962962963,
+          Pct_Under_Investigation: 0.4444444444,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 62.34,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1051",
+          bank_name: "Punjab National Bank",
+          area: "Sonipat City",
+          latitude: 28.982418,
+          longitude: 77.014157,
+          address:
+            "Shop No-1, Rohtak Rd, near Samart Jewellers, West Ram Nagar, Sonipat, Haryana 131001",
+          Complaint_Count: 26,
+          Recent_30d_Count: 26,
+          Top_Fraud_Type: "OTP Bypass",
+          Avg_Fund_Recovery_Pct: 60.5769230769,
+          Pct_Blocked: 0.1538461538,
+          Pct_Under_Investigation: 0.3846153846,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 62.02,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1022",
+          bank_name: "Indusind  Bank",
+          area: "Sonipat City",
+          latitude: 28.996812,
+          longitude: 77.023187,
+          address: "bus stand sonipat ",
+          Complaint_Count: 27,
+          Recent_30d_Count: 27,
+          Top_Fraud_Type: "UPI Fraud",
+          Avg_Fund_Recovery_Pct: 49.0740740741,
+          Pct_Blocked: 0.1851851852,
+          Pct_Under_Investigation: 0.4074074074,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 61.72,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1037",
+          bank_name: "State Bank Of India",
+          area: "Sonipat City",
+          latitude: 28.9970808,
+          longitude: 77.0087514,
+          address:
+            "Rakba 11, Main Market, Jain Bagh Colony, Sonipat, Haryana 131001",
+          Complaint_Count: 23,
+          Recent_30d_Count: 23,
+          Top_Fraud_Type: "OTP Bypass",
+          Avg_Fund_Recovery_Pct: 48.9130434783,
+          Pct_Blocked: 0.3913043478,
+          Pct_Under_Investigation: 0.6086956522,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 61.52,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1027",
+          bank_name: "Indian Bank",
+          area: "Sonipat City",
+          latitude: 28.999563,
+          longitude: 77.040188,
+          address: "sec 15 main market",
+          Complaint_Count: 23,
+          Recent_30d_Count: 23,
+          Top_Fraud_Type: "Card Skimming",
+          Avg_Fund_Recovery_Pct: 48.9130434783,
+          Pct_Blocked: 0.2608695652,
+          Pct_Under_Investigation: 0.5217391304,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 60.65,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1038",
+          bank_name: "Punjab National Bank",
+          area: "Sonipat City",
+          latitude: 29.001611,
+          longitude: 77.007101,
+          address: "Ground Floor, Pargati Nagar, Sonipat, Haryana 131001",
+          Complaint_Count: 25,
+          Recent_30d_Count: 25,
+          Top_Fraud_Type: "Card Skimming",
+          Avg_Fund_Recovery_Pct: 44.0,
+          Pct_Blocked: 0.32,
+          Pct_Under_Investigation: 0.4,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 60.22,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1017",
+          bank_name: "Hdfc Bank",
+          area: "Sonipat City",
+          latitude: 28.9946972,
+          longitude: 77.0206898,
+          address:
+            "Mohalla Kalan, Geeta Colony, Balmiki Basti, Sonipat, Haryana 131001",
+          Complaint_Count: 22,
+          Recent_30d_Count: 22,
+          Top_Fraud_Type: "SIM Swap",
+          Avg_Fund_Recovery_Pct: 37.5,
+          Pct_Blocked: 0.2272727273,
+          Pct_Under_Investigation: 0.7727272727,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 58.4,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1014",
+          bank_name: "Kotak Mahindra",
+          area: "Sonipat City",
+          latitude: 28.997306,
+          longitude: 77.033444,
+          address: "Sector 14 ",
+          Complaint_Count: 24,
+          Recent_30d_Count: 24,
+          Top_Fraud_Type: "Phishing",
+          Avg_Fund_Recovery_Pct: 47.9166666667,
+          Pct_Blocked: 0.2916666667,
+          Pct_Under_Investigation: 0.5416666667,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 58.0,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1020",
+          bank_name: "Uco Bank",
+          area: "Sonipat City",
+          latitude: 28.996563,
+          longitude: 77.026438,
+          address: "Gandhi chowk sec 14",
+          Complaint_Count: 16,
+          Recent_30d_Count: 16,
+          Top_Fraud_Type: "OTP Bypass",
+          Avg_Fund_Recovery_Pct: 39.0625,
+          Pct_Blocked: 0.25,
+          Pct_Under_Investigation: 0.5625,
+          Anomaly_Flag: true,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 57.26,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1046",
+          bank_name: "Indusind Bank",
+          area: "Sonipat City",
+          latitude: 28.987437,
+          longitude: 77.020813,
+          address:
+            "Ground Floor, Minerva Theater Complex, Indira Colony, Sonipat, Haryana 131001",
+          Complaint_Count: 22,
+          Recent_30d_Count: 22,
+          Top_Fraud_Type: "OTP Bypass",
+          Avg_Fund_Recovery_Pct: 39.7727272727,
+          Pct_Blocked: 0.4545454545,
+          Pct_Under_Investigation: 0.5454545455,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 57.25,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1010",
+          bank_name: "State Bank Of India",
+          area: "Sonipat City",
+          latitude: 29.002944,
+          longitude: 76.992306,
+          address: "Sector 21, Sonipat, Haryana 131001",
+          Complaint_Count: 22,
+          Recent_30d_Count: 22,
+          Top_Fraud_Type: "UPI Fraud",
+          Avg_Fund_Recovery_Pct: 51.1363636364,
+          Pct_Blocked: 0.3181818182,
+          Pct_Under_Investigation: 0.4090909091,
+          Anomaly_Flag: false,
+          Zone_Cluster: 0,
+          Cluster_Density: 35,
+          Fraud_Risk_Score_0_to_100: 56.99,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1043",
+          bank_name: "Central Bank Of India",
+          area: "Ganaur",
+          latitude: 29.131097,
+          longitude: 77.012424,
+          address: "MCD Road, Ganaur, Haryana 131101",
+          Complaint_Count: 7,
+          Recent_30d_Count: 7,
+          Top_Fraud_Type: "Card Skimming",
+          Avg_Fund_Recovery_Pct: 46.4285714286,
+          Pct_Blocked: 0.4285714286,
+          Pct_Under_Investigation: 0.5714285714,
+          Anomaly_Flag: true,
+          Zone_Cluster: 5,
+          Cluster_Density: 5,
+          Fraud_Risk_Score_0_to_100: 32.86,
+          Risk_Category: "LOW RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1041",
+          bank_name: "Icici Bank",
+          area: "Ganaur",
+          latitude: 29.1355899,
+          longitude: 77.0208773,
+          address:
+            "Ground Floor, Railway Rd, adjoining Moolchand Hospital, Sonipat, Ganaur, Haryana 131101",
+          Complaint_Count: 2,
+          Recent_30d_Count: 2,
+          Top_Fraud_Type: "Card Skimming",
+          Avg_Fund_Recovery_Pct: 50.0,
+          Pct_Blocked: 0.5,
+          Pct_Under_Investigation: 0.5,
+          Anomaly_Flag: true,
+          Zone_Cluster: 5,
+          Cluster_Density: 5,
+          Fraud_Risk_Score_0_to_100: 30.4,
+          Risk_Category: "LOW RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1042",
+          bank_name: "Axis Bank",
+          area: "Ganaur",
+          latitude: 29.1355899,
+          longitude: 77.0208773,
+          address:
+            "Ground Floor, Railway Rd, adjoining Moolchand Hospital, Sonipat, Ganaur, Haryana 131101",
+          Complaint_Count: 8,
+          Recent_30d_Count: 8,
+          Top_Fraud_Type: "Card Skimming",
+          Avg_Fund_Recovery_Pct: 46.875,
+          Pct_Blocked: 0.625,
+          Pct_Under_Investigation: 0.5,
+          Anomaly_Flag: false,
+          Zone_Cluster: 5,
+          Cluster_Density: 5,
+          Fraud_Risk_Score_0_to_100: 26.84,
+          Risk_Category: "LOW RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1002",
+          bank_name: "Punjab National Bank",
+          area: "Kundli",
+          latitude: 28.871754,
+          longitude: 77.127915,
+          address:
+            "SCO 41 & 42, Bank Market, HSIIDC, Industrial Area, Kundli, Sonipat, Haryana 131028",
+          Complaint_Count: 4,
+          Recent_30d_Count: 4,
+          Top_Fraud_Type: "Fake Loan App",
+          Avg_Fund_Recovery_Pct: 56.25,
+          Pct_Blocked: 0.5,
+          Pct_Under_Investigation: 0.25,
+          Anomaly_Flag: true,
+          Zone_Cluster: 1,
+          Cluster_Density: 3,
+          Fraud_Risk_Score_0_to_100: 25.08,
+          Risk_Category: "LOW RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1044",
+          bank_name: "Punjab National Bank",
+          area: "Ganaur",
+          latitude: 29.131097,
+          longitude: 77.012424,
+          address: "MCD Road, Ganaur, Haryana 131101",
+          Complaint_Count: 9,
+          Recent_30d_Count: 9,
+          Top_Fraud_Type: "Card Skimming",
+          Avg_Fund_Recovery_Pct: 25.0,
+          Pct_Blocked: 0.7777777778,
+          Pct_Under_Investigation: 0.4444444444,
+          Anomaly_Flag: false,
+          Zone_Cluster: 5,
+          Cluster_Density: 5,
+          Fraud_Risk_Score_0_to_100: 24.92,
+          Risk_Category: "LOW RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1008",
+          bank_name: "State Bank Of India",
+          area: "Rai",
+          latitude: 28.91326,
+          longitude: 77.11564,
+          address:
+            "House 412 Village Badh Khalsa, Sector 62, Rai, Sonipat, Haryana 131029",
+          Complaint_Count: 2,
+          Recent_30d_Count: 2,
+          Top_Fraud_Type: "Card Skimming",
+          Avg_Fund_Recovery_Pct: 37.5,
+          Pct_Blocked: 0.0,
+          Pct_Under_Investigation: 0.0,
+          Anomaly_Flag: true,
+          Zone_Cluster: 3,
+          Cluster_Density: 2,
+          Fraud_Risk_Score_0_to_100: 24.86,
+          Risk_Category: "LOW RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1040",
+          bank_name: "Canara Bank",
+          area: "Ganaur",
+          latitude: 29.131097,
+          longitude: 77.012424,
+          address: "MCD Road, Ganaur, Haryana 131101",
+          Complaint_Count: 2,
+          Recent_30d_Count: 2,
+          Top_Fraud_Type: "OTP Bypass",
+          Avg_Fund_Recovery_Pct: 100.0,
+          Pct_Blocked: 0.5,
+          Pct_Under_Investigation: 0.5,
+          Anomaly_Flag: true,
+          Zone_Cluster: 5,
+          Cluster_Density: 5,
+          Fraud_Risk_Score_0_to_100: 23.18,
+          Risk_Category: "LOW RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1033",
+          bank_name: "Punjab National Bank",
+          area: "Gohana",
+          latitude: 29.1393313,
+          longitude: 76.6959567,
+          address:
+            "Ground Floor, Tehsil, Gohana-Rohtak Rd, near Girls Govt College, Vikas Colony, Gohana, Haryana 131301",
+          Complaint_Count: 3,
+          Recent_30d_Count: 3,
+          Top_Fraud_Type: "Phishing",
+          Avg_Fund_Recovery_Pct: 50.0,
+          Pct_Blocked: 0.3333333333,
+          Pct_Under_Investigation: 0.6666666667,
+          Anomaly_Flag: false,
+          Zone_Cluster: 4,
+          Cluster_Density: 4,
+          Fraud_Risk_Score_0_to_100: 21.57,
+          Risk_Category: "LOW RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1032",
+          bank_name: "Punjab National Bank",
+          area: "Kundli",
+          latitude: 28.910119,
+          longitude: 77.109013,
+          address: "Parker Mall, Kundli, Sonipat, Badh Khalsa, Haryana 131028",
+          Complaint_Count: 3,
+          Recent_30d_Count: 3,
+          Top_Fraud_Type: "Fake Loan App",
+          Avg_Fund_Recovery_Pct: 50.0,
+          Pct_Blocked: 0.0,
+          Pct_Under_Investigation: 0.3333333333,
+          Anomaly_Flag: true,
+          Zone_Cluster: 3,
+          Cluster_Density: 2,
+          Fraud_Risk_Score_0_to_100: 20.98,
+          Risk_Category: "LOW RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1006",
+          bank_name: "State Bank Of India",
+          area: "Murthal",
+          latitude: 29.058493,
+          longitude: 77.064007,
+          address:
+            "Hotel Amrik Sukhdev Vaisho Dhaba, GT Road, Kurar Ibrahimpur, Murthal, Sonipat, Haryana 131029",
+          Complaint_Count: 2,
+          Recent_30d_Count: 2,
+          Top_Fraud_Type: "Card Skimming",
+          Avg_Fund_Recovery_Pct: 37.5,
+          Pct_Blocked: 0.5,
+          Pct_Under_Investigation: 0.5,
+          Anomaly_Flag: false,
+          Zone_Cluster: 2,
+          Cluster_Density: 3,
+          Fraud_Risk_Score_0_to_100: 19.65,
+          Risk_Category: "LOW RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1007",
+          bank_name: "Punjab National Bank",
+          area: "Murthal",
+          latitude: 29.048359,
+          longitude: 77.067159,
+          address:
+            "Sagar Ratna, near 51 Milestone, Murthal, Sonipat, Haryana 131039",
+          Complaint_Count: 3,
+          Recent_30d_Count: 3,
+          Top_Fraud_Type: "Card Skimming",
+          Avg_Fund_Recovery_Pct: 66.6666666667,
+          Pct_Blocked: 0.0,
+          Pct_Under_Investigation: 0.6666666667,
+          Anomaly_Flag: false,
+          Zone_Cluster: 2,
+          Cluster_Density: 3,
+          Fraud_Risk_Score_0_to_100: 17.64,
+          Risk_Category: "LOW RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1003",
+          bank_name: "Federal Bank",
+          area: "Kundli",
+          latitude: 28.8694239,
+          longitude: 77.1229111,
+          address:
+            "near 31st Mile Stone, Sersa, Kundli, Sonipat, Haryana 131028",
+          Complaint_Count: 2,
+          Recent_30d_Count: 2,
+          Top_Fraud_Type: "UPI Fraud",
+          Avg_Fund_Recovery_Pct: 62.5,
+          Pct_Blocked: 0.5,
+          Pct_Under_Investigation: 0.0,
+          Anomaly_Flag: true,
+          Zone_Cluster: 1,
+          Cluster_Density: 3,
+          Fraud_Risk_Score_0_to_100: 17.29,
+          Risk_Category: "LOW RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1004",
+          bank_name: "Union Bank Of India",
+          area: "Kundli",
+          latitude: 28.8717001,
+          longitude: 77.1272902,
+          address:
+            "Shop No 57, HSIIDC Market, near Shopping Complex, Kundli, Sonipat, Haryana 131028",
+          Complaint_Count: 3,
+          Recent_30d_Count: 3,
+          Top_Fraud_Type: "Phishing",
+          Avg_Fund_Recovery_Pct: 58.3333333333,
+          Pct_Blocked: 0.6666666667,
+          Pct_Under_Investigation: 0.6666666667,
+          Anomaly_Flag: false,
+          Zone_Cluster: 1,
+          Cluster_Density: 3,
+          Fraud_Risk_Score_0_to_100: 16.62,
+          Risk_Category: "LOW RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1035",
+          bank_name: "Bank Of Baroda",
+          area: "Gohana",
+          latitude: 29.138877,
+          longitude: 76.705665,
+          address:
+            "Shop No 1, Purani Sabzi Mandi Road, near Gurudwara Singh Sabha, Mugalpura, Gohana, Haryana 131301",
+          Complaint_Count: 3,
+          Recent_30d_Count: 3,
+          Top_Fraud_Type: "UPI Fraud",
+          Avg_Fund_Recovery_Pct: 41.6666666667,
+          Pct_Blocked: 0.0,
+          Pct_Under_Investigation: 0.6666666667,
+          Anomaly_Flag: false,
+          Zone_Cluster: 4,
+          Cluster_Density: 4,
+          Fraud_Risk_Score_0_to_100: 15.5,
+          Risk_Category: "LOW RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1036",
+          bank_name: "Icici Bank",
+          area: "Gohana",
+          latitude: 29.1360254,
+          longitude: 76.7025222,
+          address: "Ward No 8, Civil Road, Samta Chowk, Gohana, Haryana 131301",
+          Complaint_Count: 3,
+          Recent_30d_Count: 3,
+          Top_Fraud_Type: "Fake Loan App",
+          Avg_Fund_Recovery_Pct: 41.6666666667,
+          Pct_Blocked: 0.0,
+          Pct_Under_Investigation: 0.6666666667,
+          Anomaly_Flag: false,
+          Zone_Cluster: 4,
+          Cluster_Density: 4,
+          Fraud_Risk_Score_0_to_100: 15.13,
+          Risk_Category: "LOW RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1034",
+          bank_name: "State Bank Of India",
+          area: "Gohana",
+          latitude: 29.132138,
+          longitude: 76.702554,
+          address: "Gohana - Baroda Rd, Gohana, Haryana 131301",
+          Complaint_Count: 2,
+          Recent_30d_Count: 2,
+          Top_Fraud_Type: "Fake Loan App",
+          Avg_Fund_Recovery_Pct: 50.0,
+          Pct_Blocked: 0.0,
+          Pct_Under_Investigation: 0.5,
+          Anomaly_Flag: false,
+          Zone_Cluster: 4,
+          Cluster_Density: 4,
+          Fraud_Risk_Score_0_to_100: 14.5,
+          Risk_Category: "LOW RISK",
+        },
+        {
+          ATM_ID: "SNP-ATM-1005",
+          bank_name: "Punjab National Bank",
+          area: "Murthal",
+          latitude: 29.0285265,
+          longitude: 77.0739201,
+          address:
+            "Grand Trunk Rd, opposite IITM, Murthal, Sonipat, Haryana 131027",
+          Complaint_Count: 2,
+          Recent_30d_Count: 2,
+          Top_Fraud_Type: "OTP Bypass",
+          Avg_Fund_Recovery_Pct: 12.5,
+          Pct_Blocked: 0.5,
+          Pct_Under_Investigation: 0.0,
+          Anomaly_Flag: false,
+          Zone_Cluster: 2,
+          Cluster_Density: 3,
+          Fraud_Risk_Score_0_to_100: 12.78,
+          Risk_Category: "LOW RISK",
+        },
+      ];
+      window.__ALERT_DATA__ = [
+        {
+          Complaint_ID: "NCRP-CP-2026-0013",
+          Date_Time: "2026-09-08T06:43:38.000",
+          Fraud_Type: "UPI Fraud",
+          Transaction_Amount: 7034,
+          ATM_ID: "SNP-ATM-1031",
+          bank_name: "Uco Bank",
+          area: "Sonipat City",
+          latitude: 28.996681,
+          longitude: 77.026535,
+          Withdrawal_Status: "Pending",
+          Case_Status: "Closed",
+          Risk_Score: 0.82,
+          Fraud_Risk_Score_0_to_100: 63.69,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0620",
+          Date_Time: "2026-09-08T06:26:20.000",
+          Fraud_Type: "Card Skimming",
+          Transaction_Amount: 13037,
+          ATM_ID: "SNP-ATM-1006",
+          bank_name: "State Bank Of India",
+          area: "Murthal",
+          latitude: 29.058493,
+          longitude: 77.064007,
+          Withdrawal_Status: "Pending",
+          Case_Status: "Closed",
+          Risk_Score: 0.75,
+          Fraud_Risk_Score_0_to_100: 19.65,
+          Risk_Category: "LOW RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0149",
+          Date_Time: "2026-09-08T05:31:48.000",
+          Fraud_Type: "Card Skimming",
+          Transaction_Amount: 5637,
+          ATM_ID: "SNP-ATM-1023",
+          bank_name: "Hdfc Bank",
+          area: "Sonipat City",
+          latitude: 29.000437,
+          longitude: 77.040188,
+          Withdrawal_Status: "Successful",
+          Case_Status: "Under Investigation",
+          Risk_Score: 0.28,
+          Fraud_Risk_Score_0_to_100: 62.43,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0582",
+          Date_Time: "2026-09-08T05:05:47.000",
+          Fraud_Type: "SIM Swap",
+          Transaction_Amount: 26866,
+          ATM_ID: "SNP-ATM-1026",
+          bank_name: "State Bank Of India",
+          area: "Sonipat City",
+          latitude: 28.999563,
+          longitude: 77.040188,
+          Withdrawal_Status: "Blocked",
+          Case_Status: "Under Investigation",
+          Risk_Score: 0.21,
+          Fraud_Risk_Score_0_to_100: 66.12,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0452",
+          Date_Time: "2026-09-08T04:30:52.000",
+          Fraud_Type: "SIM Swap",
+          Transaction_Amount: 9491,
+          ATM_ID: "SNP-ATM-1048",
+          bank_name: "Yes Bank",
+          area: "Sonipat City",
+          latitude: 28.987563,
+          longitude: 77.020437,
+          Withdrawal_Status: "Blocked",
+          Case_Status: "Closed",
+          Risk_Score: 0.93,
+          Fraud_Risk_Score_0_to_100: 71.8,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0413",
+          Date_Time: "2026-09-08T04:03:11.000",
+          Fraud_Type: "Phishing",
+          Transaction_Amount: 14313,
+          ATM_ID: "SNP-ATM-1010",
+          bank_name: "State Bank Of India",
+          area: "Sonipat City",
+          latitude: 29.002944,
+          longitude: 76.992306,
+          Withdrawal_Status: "Successful",
+          Case_Status: "Closed",
+          Risk_Score: 0.28,
+          Fraud_Risk_Score_0_to_100: 56.99,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0589",
+          Date_Time: "2026-09-08T03:19:34.000",
+          Fraud_Type: "SIM Swap",
+          Transaction_Amount: 1432,
+          ATM_ID: "SNP-ATM-1014",
+          bank_name: "Kotak Mahindra",
+          area: "Sonipat City",
+          latitude: 28.997306,
+          longitude: 77.033444,
+          Withdrawal_Status: "Pending",
+          Case_Status: "Under Investigation",
+          Risk_Score: 0.64,
+          Fraud_Risk_Score_0_to_100: 58.0,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0082",
+          Date_Time: "2026-09-08T01:51:51.000",
+          Fraud_Type: "Fake Loan App",
+          Transaction_Amount: 2853,
+          ATM_ID: "SNP-ATM-1022",
+          bank_name: "Indusind  Bank",
+          area: "Sonipat City",
+          latitude: 28.996812,
+          longitude: 77.023187,
+          Withdrawal_Status: "Pending",
+          Case_Status: "Under Investigation",
+          Risk_Score: 0.19,
+          Fraud_Risk_Score_0_to_100: 61.72,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0194",
+          Date_Time: "2026-09-08T00:28:24.000",
+          Fraud_Type: "OTP Bypass",
+          Transaction_Amount: 24941,
+          ATM_ID: "SNP-ATM-1046",
+          bank_name: "Indusind Bank",
+          area: "Sonipat City",
+          latitude: 28.987437,
+          longitude: 77.020813,
+          Withdrawal_Status: "Pending",
+          Case_Status: "Under Investigation",
+          Risk_Score: 0.53,
+          Fraud_Risk_Score_0_to_100: 57.25,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0229",
+          Date_Time: "2026-09-08T00:27:54.000",
+          Fraud_Type: "SIM Swap",
+          Transaction_Amount: 18574,
+          ATM_ID: "SNP-ATM-1030",
+          bank_name: "Hdfc Bank",
+          area: "Sonipat City",
+          latitude: 28.9888666,
+          longitude: 77.0205938,
+          Withdrawal_Status: "Successful",
+          Case_Status: "Closed",
+          Risk_Score: 0.75,
+          Fraud_Risk_Score_0_to_100: 66.39,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0598",
+          Date_Time: "2026-09-08T00:27:28.000",
+          Fraud_Type: "Fake Loan App",
+          Transaction_Amount: 26254,
+          ATM_ID: "SNP-ATM-1030",
+          bank_name: "Hdfc Bank",
+          area: "Sonipat City",
+          latitude: 28.9888666,
+          longitude: 77.0205938,
+          Withdrawal_Status: "Blocked",
+          Case_Status: "Closed",
+          Risk_Score: 0.25,
+          Fraud_Risk_Score_0_to_100: 66.39,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0628",
+          Date_Time: "2026-09-07T21:46:33.000",
+          Fraud_Type: "Fake Loan App",
+          Transaction_Amount: 46996,
+          ATM_ID: "SNP-ATM-1010",
+          bank_name: "State Bank Of India",
+          area: "Sonipat City",
+          latitude: 29.002944,
+          longitude: 76.992306,
+          Withdrawal_Status: "Pending",
+          Case_Status: "Closed",
+          Risk_Score: 0.48,
+          Fraud_Risk_Score_0_to_100: 56.99,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0807",
+          Date_Time: "2026-09-07T21:37:51.000",
+          Fraud_Type: "OTP Bypass",
+          Transaction_Amount: 45545,
+          ATM_ID: "SNP-ATM-1037",
+          bank_name: "State Bank Of India",
+          area: "Sonipat City",
+          latitude: 28.9970808,
+          longitude: 77.0087514,
+          Withdrawal_Status: "Successful",
+          Case_Status: "Under Investigation",
+          Risk_Score: 0.62,
+          Fraud_Risk_Score_0_to_100: 61.52,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0368",
+          Date_Time: "2026-09-07T20:37:31.000",
+          Fraud_Type: "Phishing",
+          Transaction_Amount: 26040,
+          ATM_ID: "SNP-ATM-1033",
+          bank_name: "Punjab National Bank",
+          area: "Gohana",
+          latitude: 29.1393313,
+          longitude: 76.6959567,
+          Withdrawal_Status: "Blocked",
+          Case_Status: "Closed",
+          Risk_Score: 0.65,
+          Fraud_Risk_Score_0_to_100: 21.57,
+          Risk_Category: "LOW RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0786",
+          Date_Time: "2026-09-07T20:37:18.000",
+          Fraud_Type: "SIM Swap",
+          Transaction_Amount: 36659,
+          ATM_ID: "SNP-ATM-1020",
+          bank_name: "Uco Bank",
+          area: "Sonipat City",
+          latitude: 28.996563,
+          longitude: 77.026438,
+          Withdrawal_Status: "Pending",
+          Case_Status: "Closed",
+          Risk_Score: 0.16,
+          Fraud_Risk_Score_0_to_100: 57.26,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0016",
+          Date_Time: "2026-09-07T20:18:34.000",
+          Fraud_Type: "OTP Bypass",
+          Transaction_Amount: 21051,
+          ATM_ID: "SNP-ATM-1015",
+          bank_name: "State Bank Of India",
+          area: "Sonipat City",
+          latitude: 28.9807655,
+          longitude: 77.0474748,
+          Withdrawal_Status: "Pending",
+          Case_Status: "Under Investigation",
+          Risk_Score: 0.93,
+          Fraud_Risk_Score_0_to_100: 66.02,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0067",
+          Date_Time: "2026-09-07T20:15:03.000",
+          Fraud_Type: "Card Skimming",
+          Transaction_Amount: 41700,
+          ATM_ID: "SNP-ATM-1028",
+          bank_name: "Capital Small Finance Bank",
+          area: "Sonipat City",
+          latitude: 28.999563,
+          longitude: 77.040188,
+          Withdrawal_Status: "Blocked",
+          Case_Status: "Under Investigation",
+          Risk_Score: 0.49,
+          Fraud_Risk_Score_0_to_100: 69.64,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0697",
+          Date_Time: "2026-09-07T20:10:22.000",
+          Fraud_Type: "Phishing",
+          Transaction_Amount: 2759,
+          ATM_ID: "SNP-ATM-1039",
+          bank_name: "Icici Bank",
+          area: "Sonipat City",
+          latitude: 28.986799,
+          longitude: 77.020896,
+          Withdrawal_Status: "Successful",
+          Case_Status: "Closed",
+          Risk_Score: 0.72,
+          Fraud_Risk_Score_0_to_100: 74.44,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0191",
+          Date_Time: "2026-09-07T19:55:45.000",
+          Fraud_Type: "Card Skimming",
+          Transaction_Amount: 22921,
+          ATM_ID: "SNP-ATM-1050",
+          bank_name: "Kotak Mahindra",
+          area: "Sonipat City",
+          latitude: 28.987437,
+          longitude: 77.020813,
+          Withdrawal_Status: "Pending",
+          Case_Status: "Closed",
+          Risk_Score: 0.7,
+          Fraud_Risk_Score_0_to_100: 64.51,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0746",
+          Date_Time: "2026-09-07T19:35:18.000",
+          Fraud_Type: "UPI Fraud",
+          Transaction_Amount: 32295,
+          ATM_ID: "SNP-ATM-1025",
+          bank_name: "Hdfc Bank",
+          area: "Sonipat City",
+          latitude: 28.999563,
+          longitude: 77.040188,
+          Withdrawal_Status: "Pending",
+          Case_Status: "Under Investigation",
+          Risk_Score: 0.44,
+          Fraud_Risk_Score_0_to_100: 65.22,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0683",
+          Date_Time: "2026-09-07T19:20:07.000",
+          Fraud_Type: "UPI Fraud",
+          Transaction_Amount: 41707,
+          ATM_ID: "SNP-ATM-1001",
+          bank_name: "Canara Bank",
+          area: "Sonipat City",
+          latitude: 28.986689,
+          longitude: 77.0208969,
+          Withdrawal_Status: "Successful",
+          Case_Status: "Under Investigation",
+          Risk_Score: 0.81,
+          Fraud_Risk_Score_0_to_100: 62.34,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0176",
+          Date_Time: "2026-09-07T19:15:27.000",
+          Fraud_Type: "Card Skimming",
+          Transaction_Amount: 1599,
+          ATM_ID: "SNP-ATM-1009",
+          bank_name: "Axis Bank",
+          area: "Sonipat City",
+          latitude: 29.002944,
+          longitude: 76.992306,
+          Withdrawal_Status: "Pending",
+          Case_Status: "Closed",
+          Risk_Score: 0.8,
+          Fraud_Risk_Score_0_to_100: 67.04,
+          Risk_Category: "HIGH RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0245",
+          Date_Time: "2026-09-07T18:50:17.000",
+          Fraud_Type: "Fake Loan App",
+          Transaction_Amount: 32260,
+          ATM_ID: "SNP-ATM-1029",
+          bank_name: "Hdfc Bank",
+          area: "Sonipat City",
+          latitude: 28.988813,
+          longitude: 77.020562,
+          Withdrawal_Status: "Successful",
+          Case_Status: "Closed",
+          Risk_Score: 0.16,
+          Fraud_Risk_Score_0_to_100: 78.51,
+          Risk_Category: "CRITICAL RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0197",
+          Date_Time: "2026-09-07T18:03:20.000",
+          Fraud_Type: "UPI Fraud",
+          Transaction_Amount: 17766,
+          ATM_ID: "SNP-ATM-1029",
+          bank_name: "Hdfc Bank",
+          area: "Sonipat City",
+          latitude: 28.988813,
+          longitude: 77.020562,
+          Withdrawal_Status: "Blocked",
+          Case_Status: "Closed",
+          Risk_Score: 0.78,
+          Fraud_Risk_Score_0_to_100: 78.51,
+          Risk_Category: "CRITICAL RISK",
+        },
+        {
+          Complaint_ID: "NCRP-CP-2026-0614",
+          Date_Time: "2026-09-07T17:43:26.000",
+          Fraud_Type: "OTP Bypass",
+          Transaction_Amount: 32908,
+          ATM_ID: "SNP-ATM-1052",
+          bank_name: "Central Bank Of India",
+          area: "Sonipat City",
+          latitude: 28.9820339,
+          longitude: 77.014223,
+          Withdrawal_Status: "Pending",
+          Case_Status: "Closed",
+          Risk_Score: 0.61,
+          Fraud_Risk_Score_0_to_100: 67.77,
+          Risk_Category: "HIGH RISK",
+        },
+      ];
+    </script>
+    <script>
+      let atms = window.__ATM_DATA__ || [];
+      let alerts = window.__ALERT_DATA__ || [];
+
+      // ---------- Nav ----------
+      document.querySelectorAll("nav button").forEach((b) => {
+        b.addEventListener("click", () => {
+          document
+            .querySelectorAll("nav button")
+            .forEach((x) => x.classList.remove("active"));
+          document
+            .querySelectorAll(".view")
+            .forEach((x) => x.classList.remove("active"));
+          b.classList.add("active");
+          document
+            .getElementById("view-" + b.dataset.view)
+            .classList.add("active");
+          if (
+            b.dataset.view === "heatmap" &&
+            window.leafletMap &&
+            typeof mapMode !== "undefined" &&
+            mapMode === "live"
+          )
+            window.leafletMap.invalidateSize();
+        });
+      });
+
+      // ---------- KPIs (animated count-up) ----------
+      function countUp(el, target, duration) {
+        const start = performance.now();
+        function tick(now) {
+          const p = Math.min(1, (now - start) / duration);
+          const eased = 1 - Math.pow(1 - p, 3);
+          el.textContent = Math.round(target * eased).toLocaleString("en-IN");
+          if (p < 1) requestAnimationFrame(tick);
+          else el.textContent = target.toLocaleString("en-IN");
+        }
+        requestAnimationFrame(tick);
+      }
+      countUp(
+        document.getElementById("kpi-critical"),
+        atms.filter((a) => a.Risk_Category === "CRITICAL RISK").length,
+        900,
+      );
+      countUp(
+        document.getElementById("kpi-high"),
+        atms.filter((a) => a.Risk_Category === "HIGH RISK").length,
+        1000,
+      );
+      countUp(
+        document.getElementById("kpi-complaints"),
+        atms.reduce((s, a) => s + a.Recent_30d_Count, 0),
+        1200,
+      );
+      countUp(
+        document.getElementById("kpi-anomaly"),
+        atms.filter((a) => a.Anomaly_Flag).length,
+        900,
+      );
+      // Lightweight (non-animated) KPI refresh used on live data updates,
+      // so a poll doesn't retrigger the count-up entrance animation.
+      function refreshKPIs() {
+        document.getElementById("kpi-critical").textContent = atms
+          .filter((a) => a.Risk_Category === "CRITICAL RISK")
+          .length.toLocaleString("en-IN");
+        document.getElementById("kpi-high").textContent = atms
+          .filter((a) => a.Risk_Category === "HIGH RISK")
+          .length.toLocaleString("en-IN");
+        document.getElementById("kpi-complaints").textContent = atms
+          .reduce((s, a) => s + a.Recent_30d_Count, 0)
+          .toLocaleString("en-IN");
+        document.getElementById("kpi-anomaly").textContent = atms
+          .filter((a) => a.Anomaly_Flag)
+          .length.toLocaleString("en-IN");
+      }
+
+      // ---------- Button ripple effect (event delegation) ----------
+      document.addEventListener("click", (e) => {
+        const btn = e.target.closest("button.btn");
+        if (!btn) return;
+        const rect = btn.getBoundingClientRect();
+        const ripple = document.createElement("span");
+        const size = Math.max(rect.width, rect.height);
+        ripple.className = "ripple";
+        ripple.style.width = ripple.style.height = size + "px";
+        ripple.style.left = e.clientX - rect.left - size / 2 + "px";
+        ripple.style.top = e.clientY - rect.top - size / 2 + "px";
+        btn.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 550);
+      });
+
+      // ---------- Filters ----------
+      function uniq(arr) {
+        return [...new Set(arr)].sort();
+      }
+      function fillSelect(id, values) {
+        const sel = document.getElementById(id);
+        values.forEach((v) => {
+          const o = document.createElement("option");
+          o.value = v;
+          o.textContent = v;
+          sel.appendChild(o);
+        });
+      }
+      fillSelect("f-area", uniq(atms.map((a) => a.area)));
+      fillSelect("f-bank", uniq(atms.map((a) => a.bank_name)));
+      fillSelect("f-fraud", uniq(atms.map((a) => a.Top_Fraud_Type)));
+
+      const riskColor = (c) =>
+        c === "CRITICAL RISK"
+          ? "#D8574A"
+          : c === "HIGH RISK"
+            ? "#DE9A48"
+            : c === "MEDIUM RISK"
+              ? "#D3BD5C"
+              : "#4E9C81";
+
+      // ---------- Map (real Sonipat street map via Leaflet + CARTO dark tiles, ----------
+      // with an offline schematic-map fallback for venues with no/unstable internet)
+      const lats = atms.map((a) => a.latitude),
+        lons = atms.map((a) => a.longitude);
+      const centerLat = lats.reduce((s, v) => s + v, 0) / lats.length;
+      const centerLon = lons.reduce((s, v) => s + v, 0) / lons.length;
+
+      const leafletMap = (window.leafletMap = L.map("leaflet-map", {
+        zoomControl: true,
+        attributionControl: true,
+      }).setView([centerLat, centerLon], 12));
+
+      const tileLayer = L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=cb1_32vt_1_c4a1a7bba11122832d9de6bb",
+        {
+          maxZoom: 19,
+          attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
+        },
+      ).addTo(leafletMap);
+
+      const markerLayer = L.layerGroup().addTo(leafletMap);
+      const markersById = {};
+
+      function popupHtml(a) {
+        return `<b>${a.ATM_ID}</b> · ${a.Risk_Category}<br>${a.bank_name}, ${a.area}<br>
+    <span style="color:var(--muted)">Score: ${a.Fraud_Risk_Score_0_to_100}/100 · ${a.Complaint_Count} complaints linked</span>`;
+      }
+
+      const pulseMarkers = []; // critical-risk markers get a live radar pulse
+      atms.forEach((a) => {
+        const r = 5 + (a.Fraud_Risk_Score_0_to_100 / 100) * 10;
+        const marker = L.circleMarker([a.latitude, a.longitude], {
+          radius: r,
+          color: a.Anomaly_Flag ? "#ffffff" : "rgba(0,0,0,0.4)",
+          weight: a.Anomaly_Flag ? 1.5 : 1,
+          fillColor: riskColor(a.Risk_Category),
+          fillOpacity: a.Anomaly_Flag ? 0.95 : 0.75,
+        });
+        marker.bindPopup(popupHtml(a));
+        marker.on("click", () => showDetail(a));
+        markersById[a.ATM_ID] = marker;
+        if (a.Risk_Category === "CRITICAL RISK") {
+          pulseMarkers.push({ marker, baseR: r });
+        }
+      });
+      // Gentle "radar blip" pulse loop for the highest-severity ATMs only —
+      // keeps attention on real critical risk rather than decorating everything.
+      let pulseT = 0;
+      setInterval(() => {
+        pulseT += 0.25;
+        const amp = 2.2 * Math.abs(Math.sin(pulseT));
+        pulseMarkers.forEach((p) => {
+          if (mapMode === "live") p.marker.setRadius(p.baseR + amp);
+        });
+      }, 90);
+
+      // Updates existing markers in place on a live refresh (same ATM_IDs
+      // persist across refreshes -- only their computed risk fields change --
+      // so we restyle rather than destroy/recreate).
+      function updateMarkerStyles(list) {
+        list.forEach((a) => {
+          const m = markersById[a.ATM_ID];
+          if (!m) return;
+          const r = 5 + (a.Fraud_Risk_Score_0_to_100 / 100) * 10;
+          m.setStyle({
+            radius: r,
+            color: a.Anomaly_Flag ? "#ffffff" : "rgba(0,0,0,0.4)",
+            weight: a.Anomaly_Flag ? 1.5 : 1,
+            fillColor: riskColor(a.Risk_Category),
+            fillOpacity: a.Anomaly_Flag ? 0.95 : 0.75,
+          });
+          m.setPopupContent(popupHtml(a));
+          m.off("click");
+          m.on("click", () => showDetail(a));
+        });
+      }
+
+      function currentFilterFn() {
+        const area = document.getElementById("f-area").value,
+          bank = document.getElementById("f-bank").value,
+          fraud = document.getElementById("f-fraud").value,
+          risk = document.getElementById("f-risk").value;
+        return (a) =>
+          (!area || a.area === area) &&
+          (!bank || a.bank_name === bank) &&
+          (!fraud || a.Top_Fraud_Type === fraud) &&
+          (!risk || a.Risk_Category === risk);
+      }
+
+      function renderLiveMap() {
+        markerLayer.clearLayers();
+        atms
+          .filter(currentFilterFn())
+          .forEach((a) => markerLayer.addLayer(markersById[a.ATM_ID]));
+      }
+
+      // ---- Offline schematic map: real coordinate grid, real scale bar, real
+      // area clusters -- no live tiles required, so it always renders. ----
+      const latMin = Math.min(...lats),
+        latMax = Math.max(...lats),
+        lonMin = Math.min(...lons),
+        lonMax = Math.max(...lons);
+      const padL = 50,
+        padR = 30,
+        padT = 30,
+        padB = 40,
+        W = 800,
+        H = 520;
+      function proj(lat, lon) {
+        const x =
+          padL + ((lon - lonMin) / (lonMax - lonMin)) * (W - padL - padR);
+        const y =
+          H - padB - ((lat - latMin) / (latMax - latMin)) * (H - padT - padB);
+        return [x, y];
+      }
+      function haversineKm(lat1, lon1, lat2, lon2) {
+        const R = 6371,
+          dLat = ((lat2 - lat1) * Math.PI) / 180,
+          dLon = ((lon2 - lon1) * Math.PI) / 180;
+        const av =
+          Math.sin(dLat / 2) ** 2 +
+          Math.cos((lat1 * Math.PI) / 180) *
+            Math.cos((lat2 * Math.PI) / 180) *
+            Math.sin(dLon / 2) ** 2;
+        return 2 * R * Math.asin(Math.sqrt(av));
+      }
+      function renderOfflineMap() {
+        const svg = document.getElementById("offline-map-svg");
+        svg.innerHTML = "";
+        const ns = "http://www.w3.org/2000/svg";
+        const g = document.createElementNS(ns, "g");
+
+        // background
+        const bg = document.createElementNS(ns, "rect");
+        bg.setAttribute("x", 0);
+        bg.setAttribute("y", 0);
+        bg.setAttribute("width", W);
+        bg.setAttribute("height", H);
+        bg.setAttribute("fill", "#0B1119");
+        g.appendChild(bg);
+
+        // real lat/long graticule (every ~0.02 deg)
+        const step = 0.02;
+        for (
+          let lo = Math.ceil(lonMin / step) * step;
+          lo <= lonMax;
+          lo += step
+        ) {
+          const [x1] = proj(latMin, lo),
+            [x2] = proj(latMax, lo);
+          const line = document.createElementNS(ns, "line");
+          line.setAttribute("x1", x1);
+          line.setAttribute("y1", padT);
+          line.setAttribute("x2", x1);
+          line.setAttribute("y2", H - padB);
+          line.setAttribute("stroke", "#1C2A38");
+          line.setAttribute("stroke-width", "1");
+          g.appendChild(line);
+          const lbl = document.createElementNS(ns, "text");
+          lbl.setAttribute("x", x1);
+          lbl.setAttribute("y", H - padB + 14);
+          lbl.setAttribute("fill", "#4A5A6B");
+          lbl.setAttribute("font-size", "9");
+          lbl.setAttribute("text-anchor", "middle");
+          lbl.setAttribute("font-family", "IBM Plex Mono, monospace");
+          lbl.textContent = lo.toFixed(2) + "°E";
+          g.appendChild(lbl);
+        }
+        for (
+          let la = Math.ceil(latMin / step) * step;
+          la <= latMax;
+          la += step
+        ) {
+          const [, y1] = proj(la, lonMin),
+            [, y2] = proj(la, lonMax);
+          const line = document.createElementNS(ns, "line");
+          line.setAttribute("x1", padL);
+          line.setAttribute("y1", y1);
+          line.setAttribute("x2", W - padR);
+          line.setAttribute("y2", y1);
+          line.setAttribute("stroke", "#1C2A38");
+          line.setAttribute("stroke-width", "1");
+          g.appendChild(line);
+          const lbl = document.createElementNS(ns, "text");
+          lbl.setAttribute("x", 6);
+          lbl.setAttribute("y", y1 + 3);
+          lbl.setAttribute("fill", "#4A5A6B");
+          lbl.setAttribute("font-size", "9");
+          lbl.setAttribute("font-family", "IBM Plex Mono, monospace");
+          lbl.textContent = la.toFixed(2) + "°N";
+          g.appendChild(lbl);
+        }
+
+        // area clusters (real centroid + real spread of each area's actual ATMs)
+        const areaGroups = {};
+        atms.forEach((a) => {
+          (areaGroups[a.area] = areaGroups[a.area] || []).push(a);
+        });
+        Object.entries(areaGroups).forEach(([area, list]) => {
+          const cx = list.reduce((s, a) => s + a.latitude, 0) / list.length;
+          const cy = list.reduce((s, a) => s + a.longitude, 0) / list.length;
+          const [px, py] = proj(cx, cy);
+          let maxR = 20;
+          list.forEach((a) => {
+            const [ax, ay] = proj(a.latitude, a.longitude);
+            maxR = Math.max(maxR, Math.hypot(ax - px, ay - py) + 22);
+          });
+          const ell = document.createElementNS(ns, "ellipse");
+          ell.setAttribute("cx", px);
+          ell.setAttribute("cy", py);
+          ell.setAttribute("rx", maxR);
+          ell.setAttribute("ry", maxR * 0.72);
+          ell.setAttribute("fill", "#16212C");
+          ell.setAttribute("stroke", "#26374A");
+          ell.setAttribute("stroke-dasharray", "3,3");
+          g.appendChild(ell);
+          const lbl = document.createElementNS(ns, "text");
+          lbl.setAttribute("x", px);
+          lbl.setAttribute("y", py - maxR * 0.72 - 8);
+          lbl.setAttribute("fill", "#7E93A7");
+          lbl.setAttribute("font-size", "11");
+          lbl.setAttribute("text-anchor", "middle");
+          lbl.textContent = area;
+          g.appendChild(lbl);
+        });
+
+        // markers (same styling/logic as the live map)
+        atms.filter(currentFilterFn()).forEach((a) => {
+          const [x, y] = proj(a.latitude, a.longitude);
+          const r = 5 + (a.Fraud_Risk_Score_0_to_100 / 100) * 10;
+          // radar pulse ring behind critical-risk ATMs — real-time-monitoring cue
+          if (a.Risk_Category === "CRITICAL RISK") {
+            const ring = document.createElementNS(ns, "circle");
+            ring.setAttribute("cx", x);
+            ring.setAttribute("cy", y);
+            ring.setAttribute("r", r);
+            ring.setAttribute("fill", "none");
+            ring.setAttribute("stroke", riskColor(a.Risk_Category));
+            ring.setAttribute("stroke-width", "1.5");
+            ring.setAttribute("opacity", "0.7");
+            const animR = document.createElementNS(ns, "animate");
+            animR.setAttribute("attributeName", "r");
+            animR.setAttribute("values", `${r};${r + 13}`);
+            animR.setAttribute("dur", "2s");
+            animR.setAttribute("repeatCount", "indefinite");
+            const animO = document.createElementNS(ns, "animate");
+            animO.setAttribute("attributeName", "opacity");
+            animO.setAttribute("values", "0.7;0");
+            animO.setAttribute("dur", "2s");
+            animO.setAttribute("repeatCount", "indefinite");
+            ring.appendChild(animR);
+            ring.appendChild(animO);
+            g.appendChild(ring);
+          }
+          const c = document.createElementNS(ns, "circle");
+          c.setAttribute("cx", x);
+          c.setAttribute("cy", y);
+          c.setAttribute("r", r);
+          c.setAttribute("fill", riskColor(a.Risk_Category));
+          c.setAttribute("fill-opacity", a.Anomaly_Flag ? "0.95" : "0.75");
+          c.setAttribute("stroke", a.Anomaly_Flag ? "#fff" : "rgba(0,0,0,0.4)");
+          c.setAttribute("stroke-width", a.Anomaly_Flag ? "1.5" : "1");
+          c.style.cursor = "pointer";
+          c.addEventListener("click", () => showDetail(a));
+          const title = document.createElementNS(ns, "title");
+          title.textContent =
+            a.ATM_ID + " — " + a.bank_name + " (" + a.Risk_Category + ")";
+          c.appendChild(title);
+          g.appendChild(c);
+        });
+
+        // scale bar (computed from real coordinates, not decorative)
+        const kmPerPxAtCenter =
+          haversineKm(centerLat, lonMin, centerLat, lonMax) / (W - padL - padR);
+        const targetPx = 100;
+        const km = kmPerPxAtCenter * targetPx;
+        const niceKm =
+          km < 1.5 ? 1 : km < 3.5 ? 2 : km < 7.5 ? 5 : Math.round(km / 5) * 5;
+        const barPx = niceKm / kmPerPxAtCenter;
+        const bx = W - padR - barPx,
+          by = H - 18;
+        const bar = document.createElementNS(ns, "line");
+        bar.setAttribute("x1", bx);
+        bar.setAttribute("y1", by);
+        bar.setAttribute("x2", bx + barPx);
+        bar.setAttribute("y2", by);
+        bar.setAttribute("stroke", "#7E93A7");
+        bar.setAttribute("stroke-width", "2");
+        g.appendChild(bar);
+        const barLbl = document.createElementNS(ns, "text");
+        barLbl.setAttribute("x", bx + barPx / 2);
+        barLbl.setAttribute("y", by - 6);
+        barLbl.setAttribute("fill", "#7E93A7");
+        barLbl.setAttribute("font-size", "10");
+        barLbl.setAttribute("text-anchor", "middle");
+        barLbl.setAttribute("font-family", "IBM Plex Mono, monospace");
+        barLbl.textContent = niceKm + " km";
+        g.appendChild(barLbl);
+
+        // compass
+        const compX = W - padR - 16,
+          compY = padT + 16;
+        const comp = document.createElementNS(ns, "text");
+        comp.setAttribute("x", compX);
+        comp.setAttribute("y", compY);
+        comp.setAttribute("fill", "#7E93A7");
+        comp.setAttribute("font-size", "13");
+        comp.setAttribute("text-anchor", "middle");
+        comp.textContent = "N ↑";
+        g.appendChild(comp);
+
+        svg.appendChild(g);
+      }
+
+      let mapMode = "live"; // 'live' | 'offline'
+      function setMapMode(mode) {
+        mapMode = mode;
+        const note = document.getElementById("map-mode-note");
+        const toggle = document.getElementById("map-mode-toggle");
+        if (mode === "offline") {
+          document.getElementById("leaflet-map").style.display = "none";
+          document.getElementById("offline-map-svg").style.display = "block";
+          note.style.display = "block";
+          note.textContent =
+            "Offline schematic map — real coordinates, no live tiles required";
+          toggle.textContent = "Try live map tiles";
+          renderOfflineMap();
+        } else {
+          document.getElementById("leaflet-map").style.display = "block";
+          document.getElementById("offline-map-svg").style.display = "none";
+          note.style.display = "none";
+          toggle.textContent = "Switch to offline map";
+          setTimeout(() => leafletMap.invalidateSize(), 50);
+          renderLiveMap();
+        }
+      }
+      document
+        .getElementById("map-mode-toggle")
+        .addEventListener("click", () => {
+          setMapMode(mapMode === "live" ? "offline" : "live");
+        });
+
+      function renderMap() {
+        mapMode === "live" ? renderLiveMap() : renderOfflineMap();
+      }
+      ["f-area", "f-bank", "f-fraud", "f-risk"].forEach((id) =>
+        document.getElementById(id).addEventListener("change", renderMap),
+      );
+
+      // Auto-fallback: if no tile finishes loading within 3.5s (blocked network,
+      // no internet, or a sandboxed preview), switch to the offline map automatically.
+      let tileLoaded = false;
+      tileLayer.on("load", () => {
+        tileLoaded = true;
+      });
+      tileLayer.on("tileload", () => {
+        tileLoaded = true;
+      });
+      setTimeout(() => {
+        if (!tileLoaded) setMapMode("offline");
+      }, 3500);
+
+      renderLiveMap();
+      setTimeout(() => leafletMap.invalidateSize(), 200);
+
+      function showDetail(a) {
+        const relatedAlerts = alerts.filter((x) => x.ATM_ID === a.ATM_ID);
+        const rc = riskColor(a.Risk_Category);
+        const latStr = a.latitude.toFixed(6),
+          lonStr = a.longitude.toFixed(6);
+        const dms = (d) => {
+          const abs = Math.abs(d),
+            deg = Math.floor(abs),
+            minFull = (abs - deg) * 60,
+            min = Math.floor(minFull),
+            sec = ((minFull - min) * 60).toFixed(1);
+          return `${deg}°${min}'${sec}"`;
+        };
+        const dmsStr = `${dms(a.latitude)}N, ${dms(a.longitude)}E`;
+        const gmapsUrl = `https://www.google.com/maps?q=${a.latitude},${a.longitude}`;
+
+        const body = document.getElementById("detail-body");
+        body.style.animation = "none";
+        void body.offsetWidth; // restart the entrance animation on every click
+        body.style.animation = "";
+
+        body.innerHTML = `
+    <div class="detail-title"><span class="pulse-dot" style="background:${rc};box-shadow:0 0 8px ${rc};"></span>${a.ATM_ID}</div>
+    <div class="muted" style="margin-bottom:8px;">${a.bank_name} · ${a.area}</div>
+    <div style="margin-bottom:10px;">${a.address || ""}</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+      <span class="badge ${a.Risk_Category.split(" ")[0]}">${a.Risk_Category}</span>
+      <span class="mono">${a.Fraud_Risk_Score_0_to_100}/100</span>
+    </div>
+    <div class="score-bar-track"><div class="score-bar-fill" id="score-fill" style="background:${rc};"></div></div>
+
+    <div class="coord-box">
+      <div class="coord-vals">
+        <span class="lbl">Coordinates (decimal)</span>
+        <span id="coord-decimal">${latStr}, ${lonStr}</span>
+        <span class="lbl" style="margin-top:4px;">DMS</span>
+        <span>${dmsStr}</span>
+      </div>
+      <div class="coord-actions">
+        <button class="icon-btn" id="copy-coord-btn" type="button">⧉ Copy</button>
+        <a class="icon-btn" href="${gmapsUrl}" target="_blank" rel="noopener" style="text-decoration:none;text-align:center;">↗ Maps</a>
+      </div>
+    </div>
+
+    <table class="detail-table" style="font-size:12px;margin-top:12px;"><tbody>
+      <tr><td class="muted">Complaints (recent)</td><td>${a.Recent_30d_Count}</td></tr>
+      <tr><td class="muted">Top fraud type</td><td>${a.Top_Fraud_Type}</td></tr>
+      <tr><td class="muted">Fund recovery %</td><td>${a.Avg_Fund_Recovery_Pct.toFixed(1)}%</td></tr>
+      <tr><td class="muted">Under investigation</td><td>${(a.Pct_Under_Investigation * 100).toFixed(0)}%</td></tr>
+      <tr><td class="muted">Geo cluster</td><td>#${a.Zone_Cluster} (${a.Cluster_Density} ATMs)</td></tr>
+      <tr><td class="muted">Anomaly flag</td><td>${a.Anomaly_Flag ? "Yes — unusual pattern" : "No"}</td></tr>
+    </tbody></table>
+    ${relatedAlerts.length ? '<div style="margin-top:10px;font-size:12px;color:var(--muted);">' + relatedAlerts.length + " recent linked complaint(s) in feed</div>" : ""}
+  `;
+
+        // animate the score bar in after paint
+        requestAnimationFrame(() => {
+          const fill = document.getElementById("score-fill");
+          if (fill) fill.style.width = a.Fraud_Risk_Score_0_to_100 + "%";
+        });
+
+        const copyBtn = document.getElementById("copy-coord-btn");
+        if (copyBtn) {
+          copyBtn.addEventListener("click", () => {
+            const text = `${latStr}, ${lonStr}`;
+            const done = () => {
+              copyBtn.textContent = "✓ Copied";
+              copyBtn.classList.add("copied");
+              setTimeout(() => {
+                copyBtn.textContent = "⧉ Copy";
+                copyBtn.classList.remove("copied");
+              }, 1600);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(text).then(done).catch(done);
+            } else {
+              done();
+            }
+          });
+        }
+      }
+
+      // ---------- Predictive Engine (interactive) ----------
+      const tbody = document.getElementById("engine-tbody");
+      const engineSearch = document.getElementById("engine-search");
+      const engineRisk = document.getElementById("engine-risk-filter");
+      const engineSort = document.getElementById("engine-sort");
+      const engineCount = document.getElementById("engine-count");
+
+      function riskClass(category) {
+        return category.split(" ")[0];
+      }
+      function renderRiskDistribution(list = atms) {
+        const cats = ["CRITICAL RISK", "HIGH RISK", "MEDIUM RISK", "LOW RISK"];
+        const counts = cats.map(
+          (c) => list.filter((a) => a.Risk_Category === c).length,
+        );
+        const max = Math.max(...counts, 1);
+        cats.forEach((c, i) => {
+          const key = c.split(" ")[0].toLowerCase();
+          document.getElementById("rd-" + key).textContent = counts[i];
+          document.getElementById("rf-" + key).style.width =
+            (counts[i] / max) * 100 + "%";
+        });
+      }
+      function getEngineRows() {
+        const q = (engineSearch.value || "").trim().toLowerCase();
+        const risk = engineRisk.value;
+        let rows = atms.filter((a) => {
+          const hay = [
+            a.ATM_ID,
+            a.bank_name,
+            a.area,
+            a.Top_Fraud_Type,
+            a.Risk_Category,
+          ]
+            .join(" ")
+            .toLowerCase();
+          return (!q || hay.includes(q)) && (!risk || a.Risk_Category === risk);
+        });
+        const sort = engineSort.value;
+        rows.sort((a, b) => {
+          if (sort === "score-asc")
+            return a.Fraud_Risk_Score_0_to_100 - b.Fraud_Risk_Score_0_to_100;
+          if (sort === "complaints-desc")
+            return b.Complaint_Count - a.Complaint_Count;
+          if (sort === "recovery-desc")
+            return b.Avg_Fund_Recovery_Pct - a.Avg_Fund_Recovery_Pct;
+          if (sort === "atm-asc") return a.ATM_ID.localeCompare(b.ATM_ID);
+          return b.Fraud_Risk_Score_0_to_100 - a.Fraud_Risk_Score_0_to_100;
+        });
+        return rows;
+      }
+      function renderEngine() {
+        const rows = getEngineRows();
+        tbody.innerHTML = "";
+        engineCount.textContent =
+          rows.length + " result" + (rows.length === 1 ? "" : "s");
+        if (!rows.length) {
+          tbody.innerHTML =
+            '<tr><td colspan="9" class="engine-empty">No ATMs match the current filters.</td></tr>';
+          return;
+        }
+        rows.forEach((a, i) => {
+          const tr = document.createElement("tr");
+          tr.style.animationDelay = Math.min(i * 15, 350) + "ms";
+          const rc = riskColor(a.Risk_Category);
+          tr.innerHTML = `<td class="id">${a.ATM_ID}</td><td>${a.bank_name}</td><td>${a.area}</td><td>${a.Complaint_Count}</td><td>${a.Top_Fraud_Type}</td><td>${a.Avg_Fund_Recovery_Pct.toFixed(1)}%</td><td>${a.Anomaly_Flag ? '<span style="color:#fff">⚠ yes</span>' : '<span class="muted">—</span>'}</td><td class="score-cell"><div class="score-num">${a.Fraud_Risk_Score_0_to_100}</div><div class="mini-track"><div class="mini-fill" style="width:${a.Fraud_Risk_Score_0_to_100}%;background:${rc}"></div></div></td><td><span class="engine-badge" style="color:${rc}">${a.Risk_Category}</span></td>`;
+          tr.addEventListener("click", () => {
+            document.querySelector('nav button[data-view="heatmap"]').click();
+            showDetail(a);
+          });
+          tbody.appendChild(tr);
+        });
+      }
+      [engineSearch, engineRisk, engineSort].forEach((el) =>
+        el.addEventListener("input", renderEngine),
+      );
+      document.getElementById("engine-reset").addEventListener("click", () => {
+        engineSearch.value = "";
+        engineRisk.value = "";
+        engineSort.value = "score-desc";
+        renderEngine();
+      });
+      document.getElementById("engine-export").addEventListener("click", () => {
+        const rows = getEngineRows();
+        const headers = [
+          "ATM ID",
+          "Bank",
+          "Area",
+          "Complaints",
+          "Top Fraud Type",
+          "Fund Recovery %",
+          "Anomaly",
+          "Score",
+          "Category",
+        ];
+        const csv = [
+          headers,
+          ...rows.map((a) => [
+            a.ATM_ID,
+            a.bank_name,
+            a.area,
+            a.Complaint_Count,
+            a.Top_Fraud_Type,
+            a.Avg_Fund_Recovery_Pct.toFixed(1),
+            a.Anomaly_Flag ? "Yes" : "No",
+            a.Fraud_Risk_Score_0_to_100,
+            a.Risk_Category,
+          ]),
+        ]
+          .map((r) =>
+            r.map((v) => '"' + String(v).replace(/"/g, '""') + '"').join(","),
+          )
+          .join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" }),
+          url = URL.createObjectURL(blob),
+          link = document.createElement("a");
+        link.href = url;
+        link.download = "sonipat_atm_predictive_engine.csv";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      });
+      renderRiskDistribution();
+      renderEngine();
+
+      // ---------- Law enforcement case list ----------
+      const caseList = document.getElementById("case-list");
+      function rebuildCaseList() {
+        caseList.innerHTML = "";
+        const topCases = atms
+          .filter(
+            (a) =>
+              a.Risk_Category === "CRITICAL RISK" ||
+              a.Risk_Category === "HIGH RISK",
+          )
+          .slice(0, 12);
+        topCases.forEach((a, i) => {
+          const div = document.createElement("div");
+          div.className = "case-row";
+          div.style.animationDelay = i * 55 + "ms";
+          div.innerHTML = `
+    <div class="top">
+      <div><span class="mono">CASE-${1000 + i}</span> · ${a.ATM_ID} · ${a.bank_name}, ${a.area}</div>
+      <span class="badge ${a.Risk_Category.split(" ")[0]}">${a.Risk_Category}</span>
+    </div>
+    <div class="muted" style="margin-bottom:8px;">Predominant modality: ${a.Top_Fraud_Type} · ${a.Complaint_Count} linked complaints · ${(a.Pct_Under_Investigation * 100).toFixed(0)}% still under investigation</div>
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <button class="btn ghost" data-action="evidence">📎 Evidence (${Math.max(1, Math.floor(a.Complaint_Count / 6))})</button>
+      <button class="btn ghost" data-action="assign">Assign investigator</button>
+      <button class="btn" data-action="escalate">Escalate to I4C</button>
+    </div>
+    <textarea placeholder="Add case notes..."></textarea>
+  `;
+          div.querySelectorAll("button").forEach((btn) =>
+            btn.addEventListener("click", (e) => {
+              const act = e.target.dataset.action;
+              if (act === "escalate") {
+                e.target.textContent = "Escalated ✓";
+                e.target.disabled = true;
+              }
+              if (act === "assign") {
+                e.target.textContent = "Assigned to Insp. Sharma";
+                e.target.disabled = true;
+              }
+            }),
+          );
+          caseList.appendChild(div);
+        });
+      }
+      rebuildCaseList();
+
+      // ---------- Alerts + notification simulation ----------
+      const feed = document.getElementById("alert-feed");
+      const notifyLog = document.getElementById("notify-log");
+      const channels = [
+        {
+          name: "SMS",
+          icon: "📱",
+          recipients: ["Bank ops desk", "Beat officer"],
+        },
+        {
+          name: "Email",
+          icon: "✉",
+          recipients: ["Cyber cell inbox", "Bank fraud team"],
+        },
+        { name: "API", icon: "⇄", recipients: ["I4C incident feed"] },
+        { name: "Dashboard", icon: "◉", recipients: ["Duty officer console"] },
+      ];
+      function fmtTime(iso) {
+        const d = new Date(iso);
+        return d.toLocaleString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+      function renderAlert(a, animate) {
+        const chan = channels[Math.floor(Math.random() * channels.length)];
+        const row = document.createElement("div");
+        row.className = "alert-item" + (animate ? " is-new" : "");
+        row.style.opacity = animate ? "0" : "1";
+        if (animate) row.style.transform = "translateX(-10px)";
+        row.innerHTML = `
+    <div class="chan">${chan.icon}</div>
+    <div style="flex:1;">
+      <div><b>${a.Fraud_Type}</b> · ${a.ATM_ID} — ${a.bank_name}, ${a.area}
+        <span class="badge ${a.Risk_Category.split(" ")[0]}" style="margin-left:6px;">${a.Risk_Category}</span>
+      </div>
+      <div class="muted" style="font-size:11.5px;">${fmtTime(a.Date_Time)} · ₹${a.Transaction_Amount.toLocaleString("en-IN")} · ${a.Withdrawal_Status} · routed via ${chan.name} to ${chan.recipients[0]}</div>
+    </div>
+  `;
+        feed.prepend(row);
+        if (animate) {
+          requestAnimationFrame(() => {
+            row.style.transition =
+              "opacity .4s ease, transform .4s ease, border-color .4s ease";
+            row.style.opacity = "1";
+            row.style.transform = "translateX(0)";
+          });
+          setTimeout(() => row.classList.remove("is-new"), 3200);
+        }
+        const line = document.createElement("div");
+        line.style.animation = "fadeIn .3s ease both";
+        line.textContent = `[${new Date().toLocaleTimeString("en-IN")}] ${chan.name} → ${chan.recipients.join(", ")} :: ${a.ATM_ID} ${a.Risk_Category}`;
+        notifyLog.prepend(line);
+      }
+      alerts.forEach((a) => renderAlert(a, false));
+      const seenAlertIds = new Set(alerts.map((a) => a.Complaint_ID));
+
+      // ---------- Live data polling ----------
+      // Reads the JSON files that predictive_engine.py writes. live_data_simulator.py
+      // appends new synthetic complaints to complaints_log.csv and re-runs
+      // predictive_engine.py on a timer, which regenerates these two files --
+      // the poll timer below (every POLL_INTERVAL_MS) pulls that new data into
+      // the dashboard automatically; the Refresh button forces it immediately.
+      // Browsers block fetch() of local files over file://, so this only works
+      // when the folder is served over HTTP, e.g.:
+      //   python -m http.server 8000
+      // then open http://localhost:8000/atm_fraud_intelligence_console.html
+
+      function setLiveStatus(ok) {
+        const el = document.getElementById("live-status");
+        if (ok) {
+          el.textContent =
+            "🟢 live — last refreshed " +
+            new Date().toLocaleTimeString("en-IN");
+          el.style.color = "var(--good, #4E9C81)";
+        } else {
+          el.textContent =
+            "● static demo data — start live_data_simulator.py and serve this folder over HTTP (python -m http.server 8000)";
+          el.style.color = "";
+        }
+      }
+
+      async function fetchJSON(url) {
+        const res = await fetch(url + "?_=" + Date.now(), {
+          cache: "no-store",
+        });
+        if (!res.ok) throw new Error(res.status + " " + url);
+        return res.json();
+      }
+
+      function applyLiveUpdate(newAtms, newAlerts) {
+        atms = newAtms;
+        updateMarkerStyles(atms);
+        renderMap();
+        refreshKPIs();
+        renderRiskDistribution();
+        renderEngine();
+        rebuildCaseList();
+
+        const freshAlerts = newAlerts.filter(
+          (a) => !seenAlertIds.has(a.Complaint_ID),
+        );
+        alerts = newAlerts;
+        freshAlerts
+          .sort((a, b) => new Date(a.Date_Time) - new Date(b.Date_Time))
+          .forEach((a) => {
+            seenAlertIds.add(a.Complaint_ID);
+            renderAlert(a, true);
+          });
+      }
+
+      // Auto-polling every POLL_INTERVAL_MS, plus a manual Refresh button.
+      // Without the timer the page only ever fetched once on load, so the
+      // simulator could append thousands of complaints and the dashboard
+      // would still be showing the snapshot from the moment it opened.
+      const POLL_INTERVAL_MS = 4000;
+      const refreshBtn = document.getElementById("refresh-btn");
+      let pollInFlight = false; // don't stack requests if one is slow
+      let pollTimer = null;
+
+      async function pollLiveData(manual = false) {
+        if (pollInFlight) return;
+        pollInFlight = true;
+        if (manual && refreshBtn) {
+          refreshBtn.disabled = true;
+          refreshBtn.textContent = "⟳ Refreshing…";
+        }
+        try {
+          const [newAtms, newAlerts] = await Promise.all([
+            fetchJSON("atm_risk_results.json"),
+            fetchJSON("live_alerts.json"),
+          ]);
+          applyLiveUpdate(newAtms, newAlerts);
+          setLiveStatus(true);
+        } catch (err) {
+          setLiveStatus(false);
+        } finally {
+          pollInFlight = false;
+          if (manual && refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.textContent = "⟳ Refresh";
+          }
+        }
+      }
+
+      if (refreshBtn) refreshBtn.addEventListener("click", () => pollLiveData(true));
+
+      function startPolling() {
+        if (pollTimer === null) {
+          pollTimer = setInterval(() => pollLiveData(false), POLL_INTERVAL_MS);
+        }
+      }
+      function stopPolling() {
+        if (pollTimer !== null) {
+          clearInterval(pollTimer);
+          pollTimer = null;
+        }
+      }
+
+      // Pause polling while the tab is hidden, resume (and fetch immediately)
+      // when it comes back, so a backgrounded demo doesn't pile up requests.
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          stopPolling();
+        } else {
+          pollLiveData(false);
+          startPolling();
+        }
+      });
+
+      pollLiveData(false); // first fetch on load so it isn't blank/stale
+      startPolling();
+    </script>
+  </body>
+</html>

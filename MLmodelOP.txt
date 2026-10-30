@@ -1,0 +1,52 @@
+0   SNP-ATM-1007                     100.00  CRITICAL RISK        Punjab National Bank       Murthal  29.048359  77.067159
+1   SNP-ATM-1024                      36.87       LOW RISK        Punjab National Bank           NaN  28.993709  77.046450
+2   SNP-ATM-1021                      32.78       LOW RISK        Punjab National Bank           NaN  28.996563  77.026313
+3   SNP-ATM-1016                      27.52       LOW RISK        Punjab National Bank  Sonipat City  29.004425  77.030978
+4   SNP-ATM-1051                      25.89       LOW RISK        Punjab National Bank  Sonipat City  28.982418  77.014157
+5   SNP-ATM-1010                      21.03       LOW RISK         State Bank of India  Sonipat City  29.002944  76.992306
+6   SNP-ATM-1030                      16.08       LOW RISK                   HDFC Bank  Sonipat City  28.988867  77.020594
+7   SNP-ATM-1038                      14.97       LOW RISK        Punjab National Bank  Sonipat City  29.001611  77.007101
+8   SNP-ATM-1011                      11.39       LOW RISK                   HDFC Bank  Sonipat City  29.002944  76.992306
+9   SNP-ATM-1015                      11.15       LOW RISK         State Bank of India  Sonipat City  28.980766  77.047475
+10  SNP-ATM-1029                      10.85       LOW RISK                   HDFC Bank  Sonipat City  28.988813  77.020562
+11  SNP-ATM-1037                      10.59       LOW RISK         State Bank of India  Sonipat City  28.997081  77.008751
+12  SNP-ATM-1017                       8.06       LOW RISK                   HDFC Bank  Sonipat City  28.994697  77.020690
+13  SNP-ATM-1013                       7.81       LOW RISK                   HDFC Bank  Sonipat City  28.997207  77.032692
+14  SNP-ATM-1026                       4.19       LOW RISK         State Bank of India           NaN  28.999563  77.040188
+15  SNP-ATM-1012                       4.16       LOW RISK                   HDFC Bank  Sonipat City  28.994694  77.020694
+16  SNP-ATM-1035                       3.99       LOW RISK              Bank of baroda        Gohana  29.138877  76.705665
+17  SNP-ATM-1028                       3.99       LOW RISK  capital small finance bank           NaN  28.999563  77.040188
+18  SNP-ATM-1033                       3.99       LOW RISK        Punjab National Bank        Gohana  29.139331  76.695957
+19  SNP-ATM-1049                       3.78       LOW RISK                   axis bank  Sonipat City  28.987563  77.020437
+20  SNP-ATM-1032                       3.57       LOW RISK        Punjab National Bank        Kundli  28.910119  77.109013
+21  SNP-ATM-1001                       3.34       LOW RISK                 Canara Bank  Sonipat City  28.986689  77.020897
+22  SNP-ATM-1052                       3.29       LOW RISK       Central Bank of India  Sonipat City  28.982034  77.014223
+23  SNP-ATM-1005                       3.10       LOW RISK        Punjab National Bank       Murthal  29.028527  77.073920
+24  SNP-ATM-1047                       3.10       LOW RISK       Central Bank of India  Sonipat City  28.981871  77.013892
+25  SNP-ATM-1023                       3.10       LOW RISK                   HDFC Bank           NaN  29.000437  77.040188
+26  SNP-ATM-1039                       3.09       LOW RISK                  ICICI Bank  Sonipat City  28.986799  77.020896
+27  SNP-ATM-1045                       3.09       LOW RISK                Federal Bank  Sonipat City  28.988225  77.020698
+28  SNP-ATM-1025                       3.00       LOW RISK                   HDFC Bank           NaN  28.999563  77.040188
+29  SNP-ATM-1002                       2.84       LOW RISK        Punjab National Bank        Kundli  28.871754  77.127915
+30  SNP-ATM-1003                       2.84       LOW RISK                Federal Bank        Kundli  28.869424  77.122911
+31  SNP-ATM-1048                       2.84       LOW RISK                    yes bank  Sonipat City  28.987563  77.020437
+32  SNP-ATM-1008                       2.84       LOW RISK         State Bank of India           Rai  28.913260  77.115640
+33  SNP-ATM-1036                       2.57       LOW RISK                  ICICI Bank        Gohana  29.136025  76.702522
+34  SNP-ATM-1022                       2.29       LOW RISK              Indusind  bank           NaN  28.996812  77.023187
+35  SNP-ATM-1044                       2.28       LOW RISK        Punjab National Bank        Ganaur  29.131097  77.012424
+36  SNP-ATM-1014                       1.98       LOW RISK              Kotak Mahindra           NaN  28.997306  77.033444
+37  SNP-ATM-1019                       1.97       LOW RISK             Bank of baroda   Sonipat City  28.996187  77.028188
+38  SNP-ATM-1009                       1.97       LOW RISK                   Axis Bank  Sonipat City  29.002944  76.992306
+39  SNP-ATM-1027                       1.65       LOW RISK                Indian bank            NaN  28.999563  77.040188
+40  SNP-ATM-1050                       1.65       LOW RISK              kotak mahindra           NaN  28.987437  77.020813
+41  SNP-ATM-1034                       1.65       LOW RISK         State Bank of India        Gohana  29.132138  76.702554
+42  SNP-ATM-1041                       1.64       LOW RISK                  ICICI Bank        Ganaur  29.135590  77.020877
+43  SNP-ATM-1042                       1.64       LOW RISK                   Axis Bank        Ganaur  29.135590  77.020877
+44  SNP-ATM-1006                       1.30       LOW RISK         State Bank of India       Murthal  29.058493  77.064007
+45  SNP-ATM-1040                       1.29       LOW RISK                 Canara bank        Ganaur  29.131097  77.012424
+46  SNP-ATM-1004                       1.29       LOW RISK         Union Bank of India        Kundli  28.871700  77.127290
+47  SNP-ATM-1018                       1.29       LOW RISK                 Union Bank            NaN  28.996063  77.028562
+48  SNP-ATM-1020                       0.90       LOW RISK                   Uco bank            NaN  28.996563  77.026438
+49  SNP-ATM-1031                       0.47       LOW RISK                    Uco bank  Sonipat City  28.996681  77.026535
+50  SNP-ATM-1046                       0.47       LOW RISK               indusind bank  Sonipat City  28.987437  77.020813
+51  SNP-ATM-1043                       0.00       LOW RISK       Central Bank of India        Ganaur  29.131097  77.012424
